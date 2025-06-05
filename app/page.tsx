@@ -29,6 +29,8 @@ import { HelpButton, QuickHelpTips } from "@/components/help-system"
 import { CountrySelection, countries, type Country } from "@/components/country-selection"
 import { PollutionIndicator, type WaterQualityState, type PollutionSource } from "@/components/pollution-indicator"
 import { PollutionDetails } from "@/components/pollution-details"
+import { LanguageSelector, type Language } from "@/components/language-selector"
+import { getTranslation, type Translations } from "@/lib/translations"
 
 interface AIRecommendation {
   id: string
@@ -499,93 +501,6 @@ const actions = {
   ],
 }
 
-// Pollution challenge templates
-const pollutionChallengeTemplates: ChallengeTemplate[] = [
-  {
-    id: "cross_border_pollution",
-    title: "Cross-Border Pollution Crisis",
-    description: "Industrial pollution from upstream is contaminating your water supply, causing diplomatic tensions.",
-    type: "pollution",
-    triggerConditions: {
-      countryTypes: ["downstream"],
-      pollutionThresholds: { pollutionLevel: { min: 60 } },
-    },
-    dynamicElements: {
-      requirements: {
-        base: { diplomatic: 60, environmentalHealth: 50 },
-        scaling: { diplomatic: 5 },
-      },
-    },
-    baseRewards: {
-      diplomatic: 20,
-      environmentalHealth: 15,
-      waterQuality: { pollutionLevel: -20, disputeLevel: "minor" },
-    },
-    basePenalties: { diplomatic: -15, environmentalHealth: -10, public: -15 },
-    complexity: 3,
-    countrySpecific: ["riverlandia", "deltopia"],
-  },
-  {
-    id: "industrial_contamination",
-    title: "Industrial Contamination Emergency",
-    description: "A major industrial accident has released toxic chemicals into the water system.",
-    type: "pollution",
-    triggerConditions: {
-      roles: ["industry"],
-      pollutionThresholds: { pollutionLevel: { min: 40 } },
-    },
-    dynamicElements: {
-      requirements: {
-        base: { environmentalHealth: 60, public: 50 },
-        scaling: { environmentalHealth: 5 },
-      },
-    },
-    baseRewards: { environmentalHealth: 20, public: 15, waterQuality: { pollutionLevel: -25, healthImpacts: -20 } },
-    basePenalties: { environmentalHealth: -20, public: -25, economic: -15 },
-    complexity: 4,
-    countrySpecific: ["all"],
-  },
-  {
-    id: "water_quality_standards",
-    title: "International Water Quality Standards",
-    description: "International organizations are pressuring for compliance with water quality standards.",
-    type: "pollution",
-    triggerConditions: {
-      pollutionThresholds: { pollutionLevel: { min: 50 } },
-      diplomaticThresholds: { diplomatic: { min: 40 } },
-    },
-    dynamicElements: {
-      requirements: {
-        base: { environmentalHealth: 55, resources: 30 },
-        scaling: { resources: 10 },
-      },
-    },
-    baseRewards: { diplomatic: 25, environmentalHealth: 15, waterQuality: { internationalStandards: true } },
-    basePenalties: { diplomatic: -20, economic: -15 },
-    complexity: 3,
-    countrySpecific: ["all"],
-  },
-  {
-    id: "public_health_crisis",
-    title: "Water Pollution Health Crisis",
-    description: "Contaminated drinking water is causing widespread health issues among the population.",
-    type: "pollution",
-    triggerConditions: {
-      pollutionThresholds: { healthImpacts: { min: 60 } },
-    },
-    dynamicElements: {
-      requirements: {
-        base: { public: 60, resources: 25 },
-        scaling: { public: 5 },
-      },
-    },
-    baseRewards: { public: 30, waterQuality: { healthImpacts: -30, pollutionLevel: -15 } },
-    basePenalties: { public: -25, economic: -20 },
-    complexity: 4,
-    countrySpecific: ["all"],
-  },
-]
-
 // Pollution events
 const pollutionEvents = [
   {
@@ -787,6 +702,7 @@ const crossBorderPollution: Record<string, PollutionSource[]> = {
 }
 
 const WaterDiplomacyGame: React.FC = () => {
+  const [language, setLanguage] = useState<Language>("en")
   const [gameState, setGameState] = useState<GameState>({
     currentRole: "government",
     turn: 1,
@@ -838,6 +754,8 @@ const WaterDiplomacyGame: React.FC = () => {
   const [showQuickHelp, setShowQuickHelp] = useState(true)
   const [showPollutionDetails, setShowPollutionDetails] = useState(false)
 
+  const t = getTranslation(language)
+
   // Define addMessage first, before any other functions that use it
   const addMessage = useCallback((message: string, type: GameMessage["type"]) => {
     const newMessage: GameMessage = {
@@ -886,20 +804,14 @@ const WaterDiplomacyGame: React.FC = () => {
 
     // Add initial messages
     addMessage(
-      `Welcome to ${country.name}! You are now leading this ${country.type} nation in the hydro-political simulation.`,
+      `${t.welcomeMessage} ${country.type} ${t.countries[country.id as keyof typeof t.countries].name}!`,
       "event",
     )
 
     if (country.type === "downstream") {
-      addMessage(
-        `As a downstream country, you're receiving water that may be polluted by upstream activities. Monitor water quality closely.`,
-        "pollution",
-      )
+      addMessage(t.downstreamWelcome, "pollution")
     } else {
-      addMessage(
-        `As a source country, your activities can affect downstream water quality. Be mindful of potential diplomatic consequences.`,
-        "pollution",
-      )
+      addMessage(t.sourceWelcome, "pollution")
     }
   }
 
@@ -996,21 +908,76 @@ const WaterDiplomacyGame: React.FC = () => {
       // Select a random pollution event
       const event = pollutionEvents[Math.floor(Math.random() * pollutionEvents.length)]
 
-      addMessage(`🏭 Pollution Event: ${event.title} - ${event.description}`, "pollution")
+      addMessage(
+        `🏭 ${t.pollutionEvents[event.title.replace(/\s+/g, "") as keyof typeof t.pollutionEvents]}: ${t.events[event.description.split(".")[0].replace(/\s+/g, "") as keyof typeof t.events]}`,
+        "pollution",
+      )
 
       // Apply effects with a delay to avoid render-time state updates
       setTimeout(() => {
         applyEffects(event.effects)
       }, 0)
     }
-  }, [selectedCountry, gameState.waterQuality.pollutionLevel, addMessage, applyEffects])
+  }, [selectedCountry, gameState.waterQuality.pollutionLevel, addMessage, applyEffects, t])
+
+  const getActionName = (actionKey: string): string => {
+    const actionNames: Record<string, keyof Translations> = {
+      water_rationing: "implementWaterRationing",
+      infrastructure: "buildWaterInfrastructure",
+      dam_construction: "constructStrategicDam",
+      water_release_control: "controlWaterReleases",
+      downstream_coalition: "formDownstreamCoalition",
+      international_arbitration: "seekInternationalArbitration",
+      efficiency: "improveWaterEfficiency",
+      hydroelectric_expansion: "expandHydroelectricPower",
+      desalination_expansion: "expandDesalinationCapacity",
+      water_imports: "establishWaterImportSystem",
+      conservation: "launchConservationCampaign",
+      glacier_protection: "glacierProtectionInitiative",
+      delta_restoration: "deltaEcosystemRestoration",
+      biodiversity_protection: "biodiversityProtectionInitiative",
+      cooperation: "regionalWaterCooperation",
+      water_pricing: "implementWaterPricing",
+      compensation_claims: "demandUpstreamCompensation",
+      technology_sharing: "technologySharingAgreement",
+      pollution_regulations: "enforcePollutionRegulations",
+      water_quality_standards: "implementWaterQualityStandards",
+      treatment_facilities: "buildTreatmentFacilities",
+      clean_production: "implementCleanProduction",
+      industrial_monitoring: "industrialDischargeMonitoring",
+      pollution_treatment: "industrialWastewaterTreatment",
+      water_quality_monitoring: "waterQualityMonitoringNetwork",
+      ecosystem_restoration: "aquaticEcosystemRestoration",
+      pollution_litigation: "pollutionLitigationCampaign",
+      water_quality_agreement: "waterQualityTreaty",
+      pollution_mediation: "crossBorderPollutionMediation",
+      diplomatic_protest: "fileDiplomaticProtest",
+    }
+
+    return t[actionNames[actionKey]] || actionKey
+  }
+
+  const getRoleName = (roleId: string): string => {
+    const roleNames: Record<string, keyof Translations> = {
+      government: "governmentOfficial",
+      industry: "industryRepresentative",
+      environmental: "environmentalAdvocate",
+      international: "internationalMediator",
+    }
+
+    return t[roleNames[roleId]] || roleId
+  }
+
+  const getTagName = (tag: string): string => {
+    return t.tags[tag as keyof typeof t.tags] || tag
+  }
 
   const takeAction = (actionKey: string) => {
     const currentRoleActions = actions[gameState.currentRole as keyof typeof actions]
     const action = currentRoleActions?.find((a) => a.key === actionKey)
 
     if (!action || gameState.resources < action.cost) {
-      addMessage("Insufficient resources to take this action!", "crisis")
+      addMessage(t.insufficientResources, "crisis")
       return
     }
 
@@ -1034,7 +1001,7 @@ const WaterDiplomacyGame: React.FC = () => {
       turn: prev.turn + 1,
     }))
 
-    addMessage(`Action taken: ${action.name}`, "action")
+    addMessage(`${t.actionTaken}: ${getActionName(action.key)}`, "action")
 
     // Hide quick help after a few turns
     if (gameState.turn >= 3) {
@@ -1048,13 +1015,13 @@ const WaterDiplomacyGame: React.FC = () => {
 
   const generateRandomEvent = () => {
     const events = [
-      { message: "Heavy rainfall increases water reserves by 10%", effect: { water: 10 } },
-      { message: "Industrial accident contaminates water supply", effect: { water: -15, environmentalHealth: -10 } },
-      { message: "Public protests demand better water management", effect: { public: -20 } },
-      { message: "International aid package approved", effect: { resources: 30, diplomatic: 10 } },
-      { message: "New water-efficient technology discovered", effect: { water: 5, economic: 5 } },
+      { message: t.events.heavyRainfall, effect: { water: 10 } },
+      { message: t.events.industrialAccident, effect: { water: -15, environmentalHealth: -10 } },
+      { message: t.events.publicProtests, effect: { public: -20 } },
+      { message: t.events.internationalAid, effect: { resources: 30, diplomatic: 10 } },
+      { message: t.events.newTechnology, effect: { water: 5, economic: 5 } },
       {
-        message: "Climate research breakthrough improves adaptation",
+        message: t.events.climateResearch,
         effect: { adaptationLevel: 8, climateResilience: 5 },
       },
     ]
@@ -1068,7 +1035,7 @@ const WaterDiplomacyGame: React.FC = () => {
 
   const switchRole = (newRole: string, reason: string) => {
     setGameState((prev) => ({ ...prev, currentRole: newRole }))
-    addMessage(`Switched to ${roles.find((r) => r.id === newRole)?.name}: ${reason}`, "event")
+    addMessage(`${t.switchedTo} ${getRoleName(newRole)}: ${reason}`, "event")
   }
 
   const generateAIRecommendations = () => {
@@ -1166,7 +1133,7 @@ const WaterDiplomacyGame: React.FC = () => {
     : []
 
   if (!gameInitialized) {
-    return <CountrySelection onCountrySelect={handleCountrySelection} />
+    return <CountrySelection onCountrySelect={handleCountrySelection} language={language} />
   }
 
   return (
@@ -1177,20 +1144,21 @@ const WaterDiplomacyGame: React.FC = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-3xl font-bold text-blue-800">Water Diplomacy Simulation</CardTitle>
+                <CardTitle className="text-3xl font-bold text-blue-800">{t.gameTitle}</CardTitle>
                 <CardDescription>
-                  Turn {gameState.turn} - Managing water resources and quality through diplomatic solutions
+                  {t.turn} {gameState.turn} - {t.gameDescription}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-4">
+                <LanguageSelector currentLanguage={language} onLanguageChange={setLanguage} />
                 <Badge variant="outline" className="text-lg px-4 py-2">
-                  Resources: {gameState.resources}
+                  {t.resources}: {gameState.resources}
                 </Badge>
                 <Button onClick={generateAIRecommendations} variant="outline" className="gap-2">
                   <Bot className="h-4 w-4" />
-                  AI Advisor
+                  {t.aiAdvisor}
                 </Button>
-                <HelpButton />
+                <HelpButton language={language} />
               </div>
             </div>
           </CardHeader>
@@ -1200,22 +1168,30 @@ const WaterDiplomacyGame: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{selectedCountry.flag}</span>
                   <div>
-                    <div className="font-semibold">{selectedCountry.name}</div>
-                    <div className="text-muted-foreground">{selectedCountry.region}</div>
+                    <div className="font-semibold">
+                      {t.countries[selectedCountry.id as keyof typeof t.countries].name}
+                    </div>
+                    <div className="text-muted-foreground">
+                      {t.countries[selectedCountry.id as keyof typeof t.countries].region}
+                    </div>
                   </div>
                 </div>
                 <Separator orientation="vertical" className="h-8" />
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
                     <Mountain className="h-4 w-4 text-gray-600" />
-                    <span>Water Control: {gameState.waterControl}%</span>
+                    <span>
+                      {t.waterControl}: {gameState.waterControl}%
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <TrendingUp className="h-4 w-4 text-red-500" />
-                    <span>Geopolitical Power: {gameState.geopoliticalPower}%</span>
+                    <span>
+                      {t.geopoliticalPower}: {gameState.geopoliticalPower}%
+                    </span>
                   </div>
                   <Badge variant={selectedCountry.type === "source" ? "default" : "secondary"}>
-                    {selectedCountry.type === "source" ? "Source Country" : "Downstream Country"}
+                    {selectedCountry.type === "source" ? t.source : t.downstream}
                   </Badge>
                 </div>
               </div>
@@ -1229,10 +1205,10 @@ const WaterDiplomacyGame: React.FC = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-blue-800">
                 <Droplets className="h-5 w-5" />
-                Water Quality Status
+                {t.waterQualityStatus}
               </CardTitle>
               <Button variant="outline" size="sm" onClick={() => setShowPollutionDetails(!showPollutionDetails)}>
-                {showPollutionDetails ? "Hide Details" : "Show Details"}
+                {showPollutionDetails ? t.hideDetails : t.showDetails}
               </Button>
             </div>
           </CardHeader>
@@ -1240,6 +1216,7 @@ const WaterDiplomacyGame: React.FC = () => {
             <PollutionIndicator
               waterQuality={gameState.waterQuality}
               isDownstream={selectedCountry?.type === "downstream"}
+              language={language}
             />
           </CardContent>
         </Card>
@@ -1251,6 +1228,7 @@ const WaterDiplomacyGame: React.FC = () => {
             selectedCountry={selectedCountry}
             neighboringCountries={neighboringCountries}
             onTakeAction={takeAction}
+            language={language}
           />
         )}
 
@@ -1260,7 +1238,7 @@ const WaterDiplomacyGame: React.FC = () => {
             {/* Quick Help Tips */}
             {showQuickHelp && (
               <div className="relative">
-                <QuickHelpTips />
+                <QuickHelpTips language={language} />
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1277,7 +1255,7 @@ const WaterDiplomacyGame: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {currentRole && <currentRole.icon className="h-5 w-5" />}
-                  Current Role: {currentRole?.name}
+                  {t.currentRole}: {getRoleName(gameState.currentRole)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1286,11 +1264,11 @@ const WaterDiplomacyGame: React.FC = () => {
                     <Button
                       key={role.id}
                       variant={gameState.currentRole === role.id ? "default" : "outline"}
-                      onClick={() => switchRole(role.id, "Manual role switch")}
+                      onClick={() => switchRole(role.id, t.manualRoleSwitch)}
                       className="flex flex-col items-center gap-2 h-auto py-4"
                     >
                       <role.icon className="h-6 w-6" />
-                      <span className="text-xs text-center">{role.name}</span>
+                      <span className="text-xs text-center">{getRoleName(role.id)}</span>
                     </Button>
                   ))}
                 </div>
@@ -1300,22 +1278,22 @@ const WaterDiplomacyGame: React.FC = () => {
             {/* Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Available Actions</CardTitle>
-                <CardDescription>
-                  Choose your strategy to address water crisis, pollution, and diplomatic challenges
-                </CardDescription>
+                <CardTitle>{t.availableActions}</CardTitle>
+                <CardDescription>{t.availableActionsDescription}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
                   {currentRoleActions.map((action) => (
                     <div key={action.key} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex-1">
-                        <h4 className="font-semibold">{action.name}</h4>
-                        <p className="text-sm text-muted-foreground">Cost: {action.cost} resources</p>
+                        <h4 className="font-semibold">{getActionName(action.key)}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Cost: {action.cost} {t.resources.toLowerCase()}
+                        </p>
                         <div className="flex gap-1 mt-2">
                           {action.tags.map((tag) => (
                             <Badge key={tag} variant="secondary" className="text-xs">
-                              {tag}
+                              {getTagName(tag)}
                             </Badge>
                           ))}
                         </div>
@@ -1325,7 +1303,7 @@ const WaterDiplomacyGame: React.FC = () => {
                         disabled={gameState.resources < action.cost}
                         className="ml-4"
                       >
-                        Take Action
+                        {t.takeAction}
                       </Button>
                     </div>
                   ))}
@@ -1339,7 +1317,7 @@ const WaterDiplomacyGame: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-blue-800">
                     <Bot className="h-5 w-5" />
-                    AI Advisor Recommendations
+                    {t.aiAdvisorRecommendations}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1362,7 +1340,7 @@ const WaterDiplomacyGame: React.FC = () => {
                                         : "secondary"
                                   }
                                 >
-                                  Impact: {rec.impact}
+                                  {t.impact}: {rec.impact}
                                 </Badge>
                                 <Badge
                                   variant={
@@ -1373,19 +1351,19 @@ const WaterDiplomacyGame: React.FC = () => {
                                         : "secondary"
                                   }
                                 >
-                                  Urgency: {rec.urgency}
+                                  {t.urgency}: {rec.urgency}
                                 </Badge>
                               </div>
                             </div>
                             <Button onClick={() => handleRecommendationAction(rec)} size="sm">
-                              Apply
+                              {t.apply}
                             </Button>
                           </div>
                         </AlertDescription>
                       </Alert>
                     ))}
                     <Button variant="outline" onClick={() => setShowAIRecommendations(false)} className="w-full">
-                      Dismiss Recommendations
+                      {t.dismissRecommendations}
                     </Button>
                   </div>
                 </CardContent>
@@ -1400,7 +1378,7 @@ const WaterDiplomacyGame: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Regional Status
+                  {t.regionalStatus}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1408,7 +1386,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Droplets className="h-4 w-4 text-blue-500" />
-                      Water Level
+                      {t.waterLevel}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.waterLevel)}`}>
                       {gameState.waterLevel}%
@@ -1421,7 +1399,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-green-500" />
-                      Public Support
+                      {t.publicSupport}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.publicSupport)}`}>
                       {gameState.publicSupport}%
@@ -1434,7 +1412,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Zap className="h-4 w-4 text-yellow-500" />
-                      Economic Health
+                      {t.economicHealth}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.economicHealth)}`}>
                       {gameState.economicHealth}%
@@ -1447,7 +1425,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Leaf className="h-4 w-4 text-green-600" />
-                      Environmental Health
+                      {t.environmentalHealth}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.environmentalHealth)}`}>
                       {gameState.environmentalHealth}%
@@ -1460,7 +1438,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-purple-500" />
-                      Diplomatic Relations
+                      {t.diplomaticRelations}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.diplomaticRelations)}`}>
                       {gameState.diplomaticRelations}%
@@ -1475,7 +1453,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Mountain className="h-4 w-4 text-gray-600" />
-                      Water Control
+                      {t.waterControl}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.waterControl)}`}>
                       {gameState.waterControl}%
@@ -1488,7 +1466,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-red-500" />
-                      Geopolitical Power
+                      {t.geopoliticalPower}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.geopoliticalPower)}`}>
                       {gameState.geopoliticalPower}%
@@ -1503,7 +1481,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-blue-600" />
-                      Climate Resilience
+                      {t.climateResilience}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.climateResilience)}`}>
                       {gameState.climateResilience}%
@@ -1516,7 +1494,7 @@ const WaterDiplomacyGame: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="flex items-center gap-2">
                       <Lightbulb className="h-4 w-4 text-orange-500" />
-                      Adaptation Level
+                      {t.adaptationLevel}
                     </span>
                     <span className={`font-semibold ${getStatusColor(gameState.adaptationLevel)}`}>
                       {gameState.adaptationLevel}%
@@ -1532,7 +1510,7 @@ const WaterDiplomacyGame: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
-                  Game Log
+                  {t.gameLog}
                 </CardTitle>
               </CardHeader>
               <CardContent>

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Droplet, AlertTriangle, Factory, Tractor, Building2, FlaskRoundIcon as Flask } from "lucide-react"
+import { getTranslation, type Language } from "@/lib/translations"
 
 export interface PollutionSource {
   id: string
@@ -30,9 +31,12 @@ export interface WaterQualityState {
 interface PollutionIndicatorProps {
   waterQuality: WaterQualityState
   isDownstream: boolean
+  language: Language
 }
 
-export function PollutionIndicator({ waterQuality, isDownstream }: PollutionIndicatorProps) {
+export function PollutionIndicator({ waterQuality, isDownstream, language }: PollutionIndicatorProps) {
+  const t = getTranslation(language)
+
   const getPollutionColor = (level: number) => {
     if (level < 20) return "bg-green-500"
     if (level < 40) return "bg-lime-500"
@@ -50,11 +54,11 @@ export function PollutionIndicator({ waterQuality, isDownstream }: PollutionIndi
   }
 
   const getPollutionLabel = (level: number) => {
-    if (level < 20) return "Excellent"
-    if (level < 40) return "Good"
-    if (level < 60) return "Fair"
-    if (level < 80) return "Poor"
-    return "Critical"
+    if (level < 20) return t.excellent
+    if (level < 40) return t.good
+    if (level < 60) return t.fair
+    if (level < 80) return t.poor
+    return t.critical
   }
 
   const getSourceIcon = (type: string) => {
@@ -97,7 +101,7 @@ export function PollutionIndicator({ waterQuality, isDownstream }: PollutionIndi
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Droplet className={`h-5 w-5 ${getPollutionTextColor(waterQuality.pollutionLevel)}`} />
-          <span className="font-medium">Water Quality</span>
+          <span className="font-medium">{t.waterQuality}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className={`text-sm font-medium ${getPollutionTextColor(waterQuality.pollutionLevel)}`}>
@@ -116,7 +120,8 @@ export function PollutionIndicator({ waterQuality, isDownstream }: PollutionIndi
         <div className="flex items-center gap-2 mt-2">
           <AlertTriangle className="h-4 w-4 text-orange-500" />
           <span className="text-sm text-orange-700">
-            Receiving cross-border pollution from {crossBorderSources.length} upstream source
+            {t.receivingCrossBorderPollution}
+            {crossBorderSources.length} {t.upstreamSource}
             {crossBorderSources.length > 1 ? "s" : ""}
           </span>
         </div>
@@ -128,7 +133,7 @@ export function PollutionIndicator({ waterQuality, isDownstream }: PollutionIndi
             <TooltipTrigger asChild>
               <Badge variant="outline" className="flex items-center gap-1">
                 <Flask className="h-3 w-3" />
-                Treatment: {waterQuality.waterTreatmentCapacity}%
+                {t.waterTreatmentCapacity}: {waterQuality.waterTreatmentCapacity}%
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
@@ -142,7 +147,7 @@ export function PollutionIndicator({ waterQuality, isDownstream }: PollutionIndi
             <TooltipTrigger asChild>
               <Badge variant="outline" className="flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" />
-                Health Impact: {waterQuality.healthImpacts}%
+                {t.publicHealthImpacts}: {waterQuality.healthImpacts}%
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
@@ -152,7 +157,7 @@ export function PollutionIndicator({ waterQuality, isDownstream }: PollutionIndi
         </TooltipProvider>
 
         <Badge className={`border ${getDisputeColor(waterQuality.disputeLevel)}`}>
-          Disputes: {waterQuality.disputeLevel}
+          {t.disputes}: {waterQuality.disputeLevel}
         </Badge>
       </div>
     </div>
