@@ -65,6 +65,31 @@ const helpTopics: HelpTopic[] = [
     tags: ["turns", "rounds", "gameplay"],
     category: "basics",
   },
+  // Country System
+  {
+    id: "country-selection",
+    title: "Country Selection",
+    content:
+      "Choose between source countries (upstream) that control water resources, or downstream countries that depend on water flows. Each country type offers unique advantages, challenges, and strategic options that fundamentally change your gameplay experience.",
+    tags: ["countries", "selection", "upstream", "downstream"],
+    category: "basics",
+  },
+  {
+    id: "source-countries",
+    title: "Source Countries",
+    content:
+      "Source countries control river headwaters and have strong negotiating positions. They can build dams, control water releases, and charge for water access. However, they face international pressure for water sharing and environmental protection responsibilities.",
+    tags: ["source", "upstream", "control", "dams"],
+    category: "basics",
+  },
+  {
+    id: "downstream-countries",
+    title: "Downstream Countries",
+    content:
+      "Downstream countries depend on upstream water flows but may have other advantages like agricultural productivity, coastal access, or economic wealth. They can form coalitions, seek international arbitration, and invest in alternative water sources.",
+    tags: ["downstream", "dependency", "coalition", "arbitration"],
+    category: "basics",
+  },
 
   // Roles
   {
@@ -171,6 +196,30 @@ const helpTopics: HelpTopic[] = [
     content:
       "Adaptation Level represents how well your infrastructure and policies are prepared for climate change. Higher adaptation levels provide bonuses when taking climate-related actions and reduce the negative impacts of climate events.",
     tags: ["adaptation", "climate", "preparation", "infrastructure"],
+    category: "mechanics",
+  },
+  {
+    id: "water-control",
+    title: "Water Control",
+    content:
+      "Water Control represents your ability to influence regional water flows. Source countries start with high control through dams and infrastructure, while downstream countries have limited control but can increase it through cooperation and technology.",
+    tags: ["control", "influence", "infrastructure", "cooperation"],
+    category: "mechanics",
+  },
+  {
+    id: "geopolitical-power",
+    title: "Geopolitical Power",
+    content:
+      "Geopolitical Power measures your influence in regional and international affairs. It affects diplomatic success rates, ability to form coalitions, and resistance to external pressure. Power comes from economic strength, strategic resources, and alliances.",
+    tags: ["power", "influence", "diplomacy", "alliances"],
+    category: "mechanics",
+  },
+  {
+    id: "hydro-diplomacy",
+    title: "Hydro-Diplomacy",
+    content:
+      "Water resources create complex diplomatic relationships. Source countries can use water as leverage, while downstream countries may seek legal remedies or form coalitions. Success requires balancing national interests with regional cooperation.",
+    tags: ["diplomacy", "leverage", "cooperation", "conflict"],
     category: "mechanics",
   },
 

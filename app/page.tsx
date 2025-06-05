@@ -32,10 +32,11 @@ import {
   Snowflake,
   Wind,
   Thermometer,
-  CloudLightning,
   Waves,
+  Mountain,
 } from "lucide-react"
 import { HelpButton, QuickHelpTips } from "@/components/help-system"
+import { CountrySelection, type Country } from "@/components/country-selection"
 
 interface AIRecommendation {
   id: string
@@ -58,6 +59,8 @@ interface GameState {
   resources: number
   climateResilience: number
   adaptationLevel: number
+  waterControl: number
+  geopoliticalPower: number
 }
 
 interface GameMessage {
@@ -175,6 +178,7 @@ const actions = {
       cost: 2,
       impact: { water: 15, public: -10, economic: -5 },
       tags: ["regulation", "emergency", "public_policy"],
+      countries: ["all"],
     },
     {
       key: "infrastructure",
@@ -182,34 +186,39 @@ const actions = {
       cost: 5,
       impact: { water: 25, economic: 10, environmental: -5, climateResilience: 10 },
       tags: ["infrastructure", "long_term", "investment"],
+      countries: ["all"],
     },
     {
-      key: "regulations",
-      name: "Enforce Water Regulations",
+      key: "dam_construction",
+      name: "Construct Strategic Dam",
+      cost: 8,
+      impact: { water: 40, waterControl: 20, economic: 15, environmental: -15, diplomatic: -10 },
+      tags: ["infrastructure", "control", "source_only"],
+      countries: ["alpinia", "highland_federation"],
+    },
+    {
+      key: "water_release_control",
+      name: "Control Water Releases",
       cost: 3,
-      impact: { water: 10, environmental: 15, economic: -10 },
-      tags: ["regulation", "enforcement", "environmental"],
+      impact: { waterControl: 15, diplomatic: -5, geopoliticalPower: 10 },
+      tags: ["control", "diplomatic", "source_only"],
+      countries: ["alpinia", "highland_federation"],
     },
     {
-      key: "subsidies",
-      name: "Water Conservation Subsidies",
+      key: "downstream_coalition",
+      name: "Form Downstream Coalition",
       cost: 4,
-      impact: { water: 12, public: 15, economic: -8, adaptationLevel: 5 },
-      tags: ["incentive", "conservation", "economic"],
+      impact: { diplomatic: 20, geopoliticalPower: 15, public: 10 },
+      tags: ["diplomatic", "coalition", "downstream_only"],
+      countries: ["riverlandia", "deltopia", "desert_emirates"],
     },
     {
-      key: "climate_adaptation",
-      name: "Climate Adaptation Program",
+      key: "international_arbitration",
+      name: "Seek International Arbitration",
       cost: 6,
-      impact: { climateResilience: 25, adaptationLevel: 20, economic: -10, environmental: 10 },
-      tags: ["climate", "adaptation", "resilience"],
-    },
-    {
-      key: "emergency_response",
-      name: "Emergency Response System",
-      cost: 4,
-      impact: { climateResilience: 15, public: 10, resources: -5 },
-      tags: ["emergency", "preparedness", "climate"],
+      impact: { diplomatic: 25, geopoliticalPower: 10, resources: -20 },
+      tags: ["legal", "international", "downstream_only"],
+      countries: ["riverlandia", "deltopia", "desert_emirates"],
     },
   ],
   industry: [
@@ -219,41 +228,31 @@ const actions = {
       cost: 4,
       impact: { water: 20, economic: 5, environmental: 10, adaptationLevel: 8 },
       tags: ["efficiency", "technology", "sustainable"],
+      countries: ["all"],
     },
     {
-      key: "recycling",
-      name: "Water Recycling Program",
-      cost: 6,
-      impact: { water: 30, environmental: 20, economic: -5, climateResilience: 12 },
-      tags: ["recycling", "innovation", "environmental"],
-    },
-    {
-      key: "technology",
-      name: "Invest in Water Technology",
+      key: "hydroelectric_expansion",
+      name: "Expand Hydroelectric Power",
       cost: 7,
-      impact: { water: 35, economic: 15, environmental: 5, adaptationLevel: 15 },
-      tags: ["technology", "innovation", "investment"],
+      impact: { economic: 25, waterControl: 15, environmental: -10, diplomatic: -8 },
+      tags: ["energy", "infrastructure", "source_only"],
+      countries: ["alpinia", "highland_federation"],
     },
     {
-      key: "partnerships",
-      name: "Public-Private Partnerships",
-      cost: 5,
-      impact: { water: 18, economic: 20, diplomatic: 10, climateResilience: 8 },
-      tags: ["partnership", "collaboration", "economic"],
+      key: "desalination_expansion",
+      name: "Expand Desalination Capacity",
+      cost: 10,
+      impact: { water: 35, economic: -15, adaptationLevel: 20, environmental: -5 },
+      tags: ["technology", "adaptation", "downstream_only"],
+      countries: ["deltopia", "desert_emirates"],
     },
     {
-      key: "green_infrastructure",
-      name: "Green Infrastructure Investment",
+      key: "water_imports",
+      name: "Establish Water Import System",
       cost: 8,
-      impact: { water: 25, environmental: 25, economic: 5, climateResilience: 20, adaptationLevel: 15 },
-      tags: ["green", "infrastructure", "climate"],
-    },
-    {
-      key: "carbon_reduction",
-      name: "Carbon Footprint Reduction",
-      cost: 5,
-      impact: { environmental: 20, economic: -5, climateResilience: 10 },
-      tags: ["carbon", "mitigation", "climate"],
+      impact: { water: 30, economic: -20, diplomatic: 15, resources: -30 },
+      tags: ["trade", "dependency", "downstream_only"],
+      countries: ["desert_emirates", "deltopia"],
     },
   ],
   environmental: [
@@ -263,34 +262,23 @@ const actions = {
       cost: 2,
       impact: { water: 10, environmental: 20, public: 15, adaptationLevel: 5 },
       tags: ["conservation", "awareness", "public"],
+      countries: ["all"],
     },
     {
-      key: "restoration",
-      name: "Ecosystem Restoration",
-      cost: 5,
-      impact: { water: 15, environmental: 30, economic: -10, climateResilience: 15 },
-      tags: ["restoration", "ecosystem", "long_term"],
+      key: "glacier_protection",
+      name: "Glacier Protection Initiative",
+      cost: 6,
+      impact: { environmental: 30, climateResilience: 20, water: 15, economic: -10 },
+      tags: ["climate", "protection", "source_only"],
+      countries: ["alpinia", "highland_federation"],
     },
     {
-      key: "monitoring",
-      name: "Water Quality Monitoring",
-      cost: 3,
-      impact: { water: 5, environmental: 25, public: 10, adaptationLevel: 8 },
-      tags: ["monitoring", "quality", "health"],
-    },
-    {
-      key: "litigation",
-      name: "Environmental Litigation",
-      cost: 4,
-      impact: { environmental: 25, public: 5, diplomatic: -15 },
-      tags: ["legal", "enforcement", "conflict"],
-    },
-    {
-      key: "climate_research",
-      name: "Climate Impact Research",
-      cost: 4,
-      impact: { environmental: 15, adaptationLevel: 20, climateResilience: 10 },
-      tags: ["research", "climate", "science"],
+      key: "delta_restoration",
+      name: "Delta Ecosystem Restoration",
+      cost: 7,
+      impact: { environmental: 35, climateResilience: 25, water: 10, economic: -12 },
+      tags: ["restoration", "ecosystem", "downstream_only"],
+      countries: ["deltopia", "riverlandia"],
     },
     {
       key: "biodiversity_protection",
@@ -298,6 +286,7 @@ const actions = {
       cost: 6,
       impact: { environmental: 35, climateResilience: 18, water: 10, economic: -8 },
       tags: ["biodiversity", "protection", "climate"],
+      countries: ["all"],
     },
   ],
   international: [
@@ -307,44 +296,64 @@ const actions = {
       cost: 4,
       impact: { water: 20, diplomatic: 25, economic: 5, climateResilience: 10 },
       tags: ["cooperation", "regional", "diplomatic"],
+      countries: ["all"],
     },
     {
-      key: "mediation",
-      name: "Conflict Mediation",
+      key: "water_pricing",
+      name: "Implement Water Pricing",
       cost: 3,
-      impact: { diplomatic: 30, public: 10, water: 5 },
-      tags: ["mediation", "conflict", "diplomatic"],
+      impact: { resources: 40, diplomatic: -15, geopoliticalPower: 15, public: -10 },
+      tags: ["economic", "pricing", "source_only"],
+      countries: ["alpinia", "highland_federation"],
     },
     {
-      key: "funding",
-      name: "Secure International Funding",
-      cost: 2,
-      impact: { resources: 50, diplomatic: 15, economic: 10 },
-      tags: ["funding", "international", "resources"],
+      key: "compensation_claims",
+      name: "Demand Upstream Compensation",
+      cost: 5,
+      impact: { diplomatic: -10, geopoliticalPower: 10, resources: 25, public: 15 },
+      tags: ["legal", "compensation", "downstream_only"],
+      countries: ["riverlandia", "deltopia", "desert_emirates"],
     },
     {
-      key: "treaties",
-      name: "Water Sharing Treaties",
+      key: "technology_sharing",
+      name: "Technology Sharing Agreement",
       cost: 6,
-      impact: { water: 25, diplomatic: 35, economic: 5, climateResilience: 12 },
-      tags: ["treaty", "agreement", "long_term"],
-    },
-    {
-      key: "climate_accord",
-      name: "Climate Cooperation Accord",
-      cost: 7,
-      impact: { diplomatic: 30, environmental: 20, climateResilience: 25, adaptationLevel: 15 },
-      tags: ["climate", "international", "cooperation"],
-    },
-    {
-      key: "disaster_aid",
-      name: "International Disaster Aid",
-      cost: 3,
-      impact: { resources: 30, diplomatic: 20, public: 15, climateResilience: 8 },
-      tags: ["aid", "disaster", "international"],
+      impact: { diplomatic: 30, adaptationLevel: 15, economic: 10, resources: -20 },
+      tags: ["technology", "cooperation", "wealthy_only"],
+      countries: ["highland_federation", "desert_emirates"],
     },
   ],
 }
+
+const climateTrends = [
+  {
+    id: "glacier_melt",
+    name: "Glacier Melt Acceleration",
+    description: "Glaciers are melting at an alarming rate, affecting water supply.",
+    progression: 0,
+    effects: { water: -5, climateResilience: -3, seaLevel: 2 },
+    threshold: 75,
+    triggered: false,
+  },
+  {
+    id: "desertification",
+    name: "Desertification Expansion",
+    description: "Arid regions are expanding, reducing arable land and water availability.",
+    progression: 0,
+    effects: { environmental: -4, water: -3, economic: -2 },
+    threshold: 60,
+    triggered: false,
+  },
+  {
+    id: "sea_level_rise",
+    name: "Accelerated Sea Level Rise",
+    description: "Rising sea levels threaten coastal communities and ecosystems.",
+    progression: 0,
+    effects: { seaLevel: 3, extremeWeatherRisk: 2, environmental: -2 },
+    threshold: 80,
+    triggered: false,
+  },
+]
 
 const climateEventTemplates = [
   {
@@ -352,207 +361,129 @@ const climateEventTemplates = [
     name: "Severe Drought",
     icon: Sun,
     severityLevels: {
-      minor: { duration: 3, effects: { water: -10, environmental: -5, economic: -5 } },
-      moderate: { duration: 5, effects: { water: -20, environmental: -10, economic: -10, public: -5 } },
-      severe: { duration: 8, effects: { water: -35, environmental: -20, economic: -15, public: -15 } },
-      extreme: { duration: 12, effects: { water: -50, environmental: -30, economic: -25, public: -25 } },
+      minor: { duration: 2, effects: { water: -5, economic: -3 } },
+      moderate: { duration: 3, effects: { water: -10, economic: -5, public: -3 } },
+      severe: { duration: 4, effects: { water: -15, economic: -8, public: -5, environmental: -3 } },
+      extreme: { duration: 5, effects: { water: -20, economic: -12, public: -8, environmental: -5 } },
     },
-    adaptationOptions: ["water_rationing", "infrastructure", "efficiency"],
+    adaptationOptions: ["water_rationing", "efficiency", "conservation"],
   },
   {
     type: "flood",
-    name: "Major Flooding",
+    name: "Major Flood",
     icon: Waves,
     severityLevels: {
-      minor: { duration: 2, effects: { water: 5, environmental: -5, economic: -8, public: -5 } },
-      moderate: { duration: 4, effects: { water: 10, environmental: -10, economic: -15, public: -10 } },
-      severe: { duration: 6, effects: { water: 15, environmental: -20, economic: -25, public: -20 } },
-      extreme: { duration: 8, effects: { water: 20, environmental: -30, economic: -35, public: -30 } },
+      minor: { duration: 2, effects: { water: 5, economic: -2 } },
+      moderate: { duration: 3, effects: { water: 10, economic: -4, public: -2 } },
+      severe: { duration: 4, effects: { water: 15, economic: -6, public: -4, environmental: -2 } },
+      extreme: { duration: 5, effects: { water: 20, economic: -8, public: -6, environmental: -4 } },
     },
-    adaptationOptions: ["infrastructure", "emergency_response", "green_infrastructure"],
+    adaptationOptions: ["infrastructure", "delta_restoration", "cooperation"],
   },
   {
     type: "heatwave",
     name: "Extreme Heatwave",
     icon: Thermometer,
     severityLevels: {
-      minor: { duration: 2, effects: { water: -8, public: -5, economic: -3 } },
-      moderate: { duration: 4, effects: { water: -15, public: -10, economic: -8, environmental: -5 } },
-      severe: { duration: 6, effects: { water: -25, public: -20, economic: -15, environmental: -10 } },
-      extreme: { duration: 8, effects: { water: -40, public: -30, economic: -25, environmental: -20 } },
+      minor: { duration: 2, effects: { economic: -2, public: -1 } },
+      moderate: { duration: 3, effects: { economic: -4, public: -3, water: -2 } },
+      severe: { duration: 4, effects: { economic: -6, public: -5, water: -4, environmental: -1 } },
+      extreme: { duration: 5, effects: { economic: -8, public: -7, water: -6, environmental: -2 } },
     },
-    adaptationOptions: ["climate_adaptation", "emergency_response", "green_infrastructure"],
-  },
-  {
-    type: "storm",
-    name: "Severe Storm",
-    icon: CloudLightning,
-    severityLevels: {
-      minor: { duration: 1, effects: { economic: -5, public: -3 } },
-      moderate: { duration: 2, effects: { water: 5, economic: -10, public: -8, environmental: -5 } },
-      severe: { duration: 3, effects: { water: 8, economic: -20, public: -15, environmental: -10 } },
-      extreme: { duration: 4, effects: { water: 12, economic: -30, public: -25, environmental: -15 } },
-    },
-    adaptationOptions: ["emergency_response", "infrastructure", "climate_adaptation"],
-  },
-  {
-    type: "wildfire",
-    name: "Wildfire Outbreak",
-    icon: Flame,
-    severityLevels: {
-      minor: { duration: 3, effects: { water: -5, environmental: -15, public: -8 } },
-      moderate: { duration: 5, effects: { water: -10, environmental: -25, public: -15, economic: -10 } },
-      severe: { duration: 7, effects: { water: -20, environmental: -40, public: -25, economic: -20 } },
-      extreme: { duration: 10, effects: { water: -35, environmental: -60, public: -40, economic: -30 } },
-    },
-    adaptationOptions: ["restoration", "emergency_response", "biodiversity_protection"],
-  },
-]
-
-const climateTrends = [
-  {
-    id: "global_warming",
-    name: "Global Temperature Rise",
-    description: "Rising global temperatures increase extreme weather frequency",
-    threshold: 30,
-    effects: { extremeWeatherRisk: 2, temperature: 0.5 },
-  },
-  {
-    id: "precipitation_change",
-    name: "Changing Precipitation Patterns",
-    description: "Altered rainfall patterns affect water availability",
-    threshold: 40,
-    effects: { precipitation: -5, climateStability: -3 },
-  },
-  {
-    id: "sea_level_rise",
-    name: "Sea Level Rise",
-    description: "Rising sea levels threaten coastal water infrastructure",
-    threshold: 50,
-    effects: { seaLevel: 2, climateStability: -2 },
-  },
-  {
-    id: "ecosystem_disruption",
-    name: "Ecosystem Disruption",
-    description: "Climate change disrupts natural water cycles",
-    threshold: 35,
-    effects: { environmental: -2, climateStability: -4 },
+    adaptationOptions: ["water_rationing", "conservation", "efficiency"],
   },
 ]
 
 const challengeTemplates: ChallengeTemplate[] = [
   {
-    id: "infrastructure_maintenance",
-    title: "Infrastructure Maintenance Crisis",
-    description: "Your recent infrastructure investments require immediate maintenance to prevent system failures.",
-    type: "cascading",
+    id: "water_shortage",
+    title: "Address Critical Water Shortage",
+    description: "Water levels have dropped to dangerous levels. Implement emergency measures.",
+    type: "crisis",
     triggerConditions: {
-      actions: ["infrastructure"],
-      turnRange: { min: 3, max: 8 },
+      stateThresholds: { waterLevel: { max: 30 } },
     },
     dynamicElements: {
       requirements: {
-        base: { resources: 15 },
-        scaling: { resources: 5 },
+        base: { publicSupport: 50 },
+        scaling: { publicSupport: -5 },
       },
     },
-    baseRewards: { water: 20, economic: 10 },
-    basePenalties: { water: -30, economic: -20, public: -15 },
+    baseRewards: { waterLevel: 15, publicSupport: 10 },
+    basePenalties: { publicSupport: -15, economicHealth: -10 },
+    complexity: 3,
+  },
+  {
+    id: "public_unrest",
+    title: "Quell Public Unrest Over Water Policies",
+    description: "Public dissatisfaction is rising due to recent water management decisions.",
+    type: "immediate",
+    triggerConditions: {
+      stateThresholds: { publicSupport: { max: 40 } },
+    },
+    dynamicElements: {
+      requirements: {
+        base: { publicSupport: 60 },
+        scaling: { publicSupport: 5 },
+      },
+    },
+    baseRewards: { publicSupport: 20, diplomaticRelations: 5 },
+    basePenalties: { publicSupport: -20, economicHealth: -5 },
     complexity: 2,
   },
   {
-    id: "climate_refugee_crisis",
-    title: "Climate Refugee Crisis",
-    description: "Extreme weather events have displaced populations, straining water resources.",
-    type: "climate",
+    id: "economic_downturn",
+    title: "Mitigate Economic Downturn Due to Water Scarcity",
+    description: "Water scarcity is negatively impacting key industries and economic stability.",
+    type: "strategic",
     triggerConditions: {
-      climateEvents: ["flood", "drought", "wildfire"],
-      stateThresholds: { climateResilience: { max: 40 } },
+      stateThresholds: { economicHealth: { max: 50 } },
     },
     dynamicElements: {
       requirements: {
-        base: { resources: 25, public: 60 },
-        scaling: { resources: 10 },
+        base: { economicHealth: 60 },
+        scaling: { economicHealth: 5 },
       },
     },
-    baseRewards: { public: 30, diplomatic: 20, climateResilience: 15 },
-    basePenalties: { resources: -40, public: -30, water: -20 },
+    baseRewards: { economicHealth: 15, resources: 20 },
+    basePenalties: { economicHealth: -15, publicSupport: -10 },
     complexity: 4,
   },
   {
-    id: "drought_adaptation",
-    title: "Drought Adaptation Emergency",
-    description: "Prolonged drought conditions require immediate adaptation measures.",
-    type: "climate",
+    id: "environmental_degradation",
+    title: "Reverse Environmental Degradation",
+    description: "Environmental health is declining, threatening long-term sustainability.",
+    type: "cascading",
     triggerConditions: {
-      climateEvents: ["drought"],
-      climateConditions: { precipitation: { max: 30 } },
+      stateThresholds: { environmentalHealth: { max: 40 } },
     },
     dynamicElements: {
       requirements: {
-        base: { adaptationLevel: 40, resources: 20 },
-        scaling: { resources: 8 },
+        base: { environmentalHealth: 60 },
+        scaling: { environmentalHealth: 5 },
       },
     },
-    baseRewards: { water: 25, climateResilience: 20, adaptationLevel: 15 },
-    basePenalties: { water: -35, economic: -25, public: -20 },
+    baseRewards: { environmentalHealth: 20, climateResilience: 10 },
+    basePenalties: { environmentalHealth: -20, economicHealth: -5 },
     complexity: 3,
   },
   {
-    id: "flood_recovery",
-    title: "Post-Flood Recovery Initiative",
-    description: "Recent flooding has damaged infrastructure and contaminated water supplies.",
-    type: "climate",
-    triggerConditions: {
-      climateEvents: ["flood"],
-    },
-    dynamicElements: {
-      requirements: {
-        base: { resources: 30, climateResilience: 50 },
-        scaling: { resources: 12 },
-      },
-    },
-    baseRewards: { water: 20, economic: 15, public: 25, environmental: 10 },
-    basePenalties: { water: -25, economic: -30, public: -25, environmental: -15 },
-    complexity: 3,
-  },
-  {
-    id: "heatwave_response",
-    title: "Heatwave Emergency Response",
-    description: "Extreme temperatures are overwhelming cooling systems and increasing water demand.",
-    type: "climate",
-    triggerConditions: {
-      climateEvents: ["heatwave"],
-      climateConditions: { temperature: { min: 35 } },
-    },
-    dynamicElements: {
-      requirements: {
-        base: { resources: 20, adaptationLevel: 35 },
-        scaling: { resources: 8 },
-      },
-    },
-    baseRewards: { public: 20, climateResilience: 15, water: 10 },
-    basePenalties: { public: -30, water: -25, economic: -20 },
-    complexity: 2,
-  },
-  {
-    id: "climate_mitigation",
-    title: "Climate Mitigation Strategy",
-    description: "Long-term climate trends require comprehensive mitigation efforts.",
+    id: "diplomatic_tensions",
+    title: "Resolve Diplomatic Tensions Over Water Rights",
+    description: "Tensions with neighboring countries are escalating due to disputes over water resources.",
     type: "strategic",
     triggerConditions: {
-      stateThresholds: { adaptationLevel: { min: 60 } },
-      climateConditions: { globalWarming: { min: 2 } },
+      stateThresholds: { diplomaticRelations: { max: 40 } },
     },
     dynamicElements: {
       requirements: {
-        base: { resources: 40, environmental: 70, climateResilience: 60 },
-        scaling: { resources: 15 },
+        base: { diplomaticRelations: 60 },
+        scaling: { diplomaticRelations: 5 },
       },
     },
-    baseRewards: { environmental: 40, climateResilience: 30, diplomatic: 25, adaptationLevel: 20 },
-    basePenalties: { economic: -20, resources: -25 },
-    complexity: 5,
+    baseRewards: { diplomaticRelations: 20, geopoliticalPower: 5 },
+    basePenalties: { diplomaticRelations: -20, economicHealth: -5 },
+    complexity: 4,
   },
 ]
 
@@ -568,7 +499,12 @@ const WaterDiplomacyGame: React.FC = () => {
     resources: 100,
     climateResilience: 50,
     adaptationLevel: 30,
+    waterControl: 50,
+    geopoliticalPower: 50,
   })
+
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
+  const [gameInitialized, setGameInitialized] = useState(false)
 
   const [climateState, setClimateState] = useState<ClimateState>({
     currentSeason: "spring",
@@ -613,6 +549,24 @@ const WaterDiplomacyGame: React.FC = () => {
     setMessages((prev) => [newMessage, ...prev])
   }, [])
 
+  const handleCountrySelection = (country: Country) => {
+    setSelectedCountry(country)
+    setGameState({
+      ...country.startingStats,
+      currentRole: "government",
+      turn: 1,
+    })
+    setGameInitialized(true)
+    addMessage(
+      `Welcome to ${country.name}! You are now leading this ${country.type} nation in the hydro-political simulation.`,
+      "event",
+    )
+    addMessage(
+      `Your country controls ${country.startingStats.waterControl}% of regional water resources and has ${country.startingStats.geopoliticalPower}% geopolitical power.`,
+      "event",
+    )
+  }
+
   // Climate System Functions
   const applyClimateEffects = useCallback((effects: Record<string, number>) => {
     setGameState((prev) => ({
@@ -625,6 +579,8 @@ const WaterDiplomacyGame: React.FC = () => {
       climateResilience: Math.max(0, Math.min(100, prev.climateResilience + (effects.climateResilience || 0))),
       adaptationLevel: Math.max(0, Math.min(100, prev.adaptationLevel + (effects.adaptationLevel || 0))),
       resources: prev.resources + (effects.resources || 0),
+      waterControl: Math.max(0, Math.min(100, prev.waterControl + (effects.waterControl || 0))),
+      geopoliticalPower: Math.max(0, Math.min(100, prev.geopoliticalPower + (effects.geopoliticalPower || 0))),
     }))
   }, [])
 
@@ -835,6 +791,8 @@ const WaterDiplomacyGame: React.FC = () => {
       adaptationLevel: Math.max(0, Math.min(100, prev.adaptationLevel + (action.impact.adaptationLevel || 0))),
       resources: prev.resources - action.cost + (action.impact.resources || 0),
       turn: prev.turn + 1,
+      waterControl: Math.max(0, Math.min(100, prev.waterControl + (action.impact.waterControl || 0))),
+      geopoliticalPower: Math.max(0, Math.min(100, prev.geopoliticalPower + (action.impact.geopoliticalPower || 0))),
     }))
 
     addMessage(`Action taken: ${action.name}`, "action")
@@ -1167,8 +1125,21 @@ const WaterDiplomacyGame: React.FC = () => {
   }
 
   const currentRole = roles.find((r) => r.id === gameState.currentRole)
-  const currentRoleActions = actions[gameState.currentRole as keyof typeof actions] || []
+  const currentRoleActions = selectedCountry
+    ? (actions[gameState.currentRole as keyof typeof actions] || []).filter(
+        (action) =>
+          action.countries.includes("all") ||
+          action.countries.includes(selectedCountry.id) ||
+          (action.countries.includes("source_only") && selectedCountry.type === "source") ||
+          (action.countries.includes("downstream_only") && selectedCountry.type === "downstream") ||
+          (action.countries.includes("wealthy_only") && selectedCountry.startingStats.economicHealth >= 70),
+      )
+    : []
   const activeActiveChallenges = activeChallenges.filter((c) => c.status === "active")
+
+  if (!gameInitialized) {
+    return <CountrySelection onCountrySelect={handleCountrySelection} />
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
@@ -1198,6 +1169,33 @@ const WaterDiplomacyGame: React.FC = () => {
               </div>
             </div>
           </CardHeader>
+          <CardContent>
+            {selectedCountry && (
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{selectedCountry.flag}</span>
+                  <div>
+                    <div className="font-semibold">{selectedCountry.name}</div>
+                    <div className="text-muted-foreground">{selectedCountry.region}</div>
+                  </div>
+                </div>
+                <Separator orientation="vertical" className="h-8" />
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <Mountain className="h-4 w-4 text-gray-600" />
+                    <span>Water Control: {gameState.waterControl}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="h-4 w-4 text-red-500" />
+                    <span>Geopolitical Power: {gameState.geopoliticalPower}%</span>
+                  </div>
+                  <Badge variant={selectedCountry.type === "source" ? "default" : "secondary"}>
+                    {selectedCountry.type === "source" ? "Source Country" : "Downstream Country"}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
 
         {/* Climate Status Bar */}
@@ -1624,6 +1622,34 @@ const WaterDiplomacyGame: React.FC = () => {
                     </span>
                   </div>
                   <Progress value={gameState.diplomaticRelations} className="h-2" />
+                </div>
+
+                <Separator />
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="flex items-center gap-2">
+                      <Mountain className="h-4 w-4 text-gray-600" />
+                      Water Control
+                    </span>
+                    <span className={`font-semibold ${getStatusColor(gameState.waterControl)}`}>
+                      {gameState.waterControl}%
+                    </span>
+                  </div>
+                  <Progress value={gameState.waterControl} className="h-2" />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-red-500" />
+                      Geopolitical Power
+                    </span>
+                    <span className={`font-semibold ${getStatusColor(gameState.geopoliticalPower)}`}>
+                      {gameState.geopoliticalPower}%
+                    </span>
+                  </div>
+                  <Progress value={gameState.geopoliticalPower} className="h-2" />
                 </div>
 
                 <Separator />
