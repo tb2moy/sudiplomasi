@@ -33,7 +33,14 @@ export function LanguageSelector({ currentLanguage, onLanguageChange }: Language
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {Object.entries(languages).map(([code, lang]) => (
-          <DropdownMenuItem key={code} onClick={() => onLanguageChange(code as Language)} className="gap-2">
+          <DropdownMenuItem
+            key={code}
+            onClick={() => {
+              console.log("Changing language to:", code)
+              onLanguageChange(code as Language)
+            }}
+            className="gap-2"
+          >
             <span className="text-lg">{lang.flag}</span>
             <span>{lang.name}</span>
             {currentLanguage === code && <span className="ml-auto">✓</span>}

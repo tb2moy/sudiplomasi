@@ -1132,10 +1132,12 @@ const WaterDiplomacyGame: React.FC = () => {
     ? countries.filter((c) => c.id !== selectedCountry.id && selectedCountry.neighbors.includes(c.name))
     : []
 
+  const handleLanguageChange = (newLanguage: Language) => {
+    setLanguage(newLanguage)
+  }
+
   if (!gameInitialized) {
-    return (
-      <CountrySelection onCountrySelect={handleCountrySelection} language={language} onLanguageChange={setLanguage} />
-    )
+    return <CountrySelection onCountrySelect={handleCountrySelection} language={language} />
   }
 
   return (
@@ -1152,7 +1154,7 @@ const WaterDiplomacyGame: React.FC = () => {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-4">
-                <LanguageSelector currentLanguage={language} onLanguageChange={setLanguage} />
+                <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
                 <Badge variant="outline" className="text-lg px-4 py-2">
                   {t.resources}: {gameState.resources}
                 </Badge>

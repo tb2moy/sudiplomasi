@@ -332,8 +332,8 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                 <LanguageSelector
                   currentLanguage={language}
                   onLanguageChange={(newLang) => {
-                    // Parent component'e dil değişikliğini bildir
-                    window.location.reload() // Geçici çözüm - daha iyi bir state management ile değiştirilebilir
+                    // Bu sadece görsel feedback için - gerçek dil değişikliği parent'ta olacak
+                    console.log("Language change requested:", newLang)
                   }}
                 />
               </div>
