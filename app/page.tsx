@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Droplets,
   Users,
@@ -22,21 +21,14 @@ import {
   Factory,
   Leaf,
   Globe,
-  Target,
-  Clock,
-  Flame,
   Shield,
   Lightbulb,
-  CloudRain,
-  Sun,
-  Snowflake,
-  Wind,
-  Thermometer,
-  Waves,
   Mountain,
 } from "lucide-react"
 import { HelpButton, QuickHelpTips } from "@/components/help-system"
-import { CountrySelection, type Country } from "@/components/country-selection"
+import { CountrySelection, countries, type Country } from "@/components/country-selection"
+import { PollutionIndicator, type WaterQualityState, type PollutionSource } from "@/components/pollution-indicator"
+import { PollutionDetails } from "@/components/pollution-details"
 
 interface AIRecommendation {
   id: string
@@ -61,12 +53,25 @@ interface GameState {
   adaptationLevel: number
   waterControl: number
   geopoliticalPower: number
+  waterQuality: WaterQualityState
+  selectedCountry?: Country
 }
 
 interface GameMessage {
   id: string
   message: string
-  type: "action" | "event" | "ai" | "crisis" | "challenge" | "success" | "climate" | "warning"
+  type:
+    | "action"
+    | "event"
+    | "ai"
+    | "crisis"
+    | "challenge"
+    | "success"
+    | "climate"
+    | "warning"
+    | "diplomatic"
+    | "conflict"
+    | "pollution"
   timestamp: Date
 }
 
@@ -80,14 +85,14 @@ interface ActionHistory {
 
 interface ClimateState {
   currentSeason: "spring" | "summer" | "autumn" | "winter"
-  temperature: number // -10 to 50 degrees
-  precipitation: number // 0 to 100 (percentage of normal)
-  humidity: number // 0 to 100
-  windSpeed: number // 0 to 100 km/h
-  climateStability: number // 0 to 100
-  globalWarming: number // 0 to 10 degrees above baseline
-  seaLevel: number // 0 to 100 cm above baseline
-  extremeWeatherRisk: number // 0 to 100
+  temperature: number
+  precipitation: number
+  humidity: number
+  windSpeed: number
+  climateStability: number
+  globalWarming: number
+  seaLevel: number
+  extremeWeatherRisk: number
 }
 
 interface ClimateEvent {
@@ -95,7 +100,7 @@ interface ClimateEvent {
   name: string
   type: "drought" | "flood" | "heatwave" | "storm" | "freeze" | "wildfire" | "hurricane" | "blizzard"
   severity: "minor" | "moderate" | "severe" | "extreme"
-  duration: number // turns
+  duration: number
   remainingDuration: number
   effects: {
     immediate: Record<string, number>
@@ -111,7 +116,7 @@ interface ClimateTrend {
   id: string
   name: string
   description: string
-  progression: number // 0 to 100
+  progression: number
   effects: Record<string, number>
   threshold: number
   triggered: boolean
@@ -121,7 +126,7 @@ interface DynamicChallenge {
   id: string
   title: string
   description: string
-  type: "immediate" | "cascading" | "strategic" | "crisis" | "climate"
+  type: "immediate" | "cascading" | "strategic" | "crisis" | "climate" | "diplomatic" | "geopolitical" | "pollution"
   triggerActions: string[]
   triggerRoles: string[]
   requirements: {
@@ -134,13 +139,25 @@ interface DynamicChallenge {
   deadline?: number
   complexity: number
   createdAt: number
+  countrySpecific?: string[]
+}
+
+interface GeopoliticalEvent {
+  id: string
+  title: string
+  description: string
+  type: "cooperation" | "conflict" | "trade" | "environmental" | "crisis" | "pollution"
+  affectedCountries: string[]
+  effects: Record<string, number>
+  duration: number
+  remainingDuration: number
 }
 
 interface ChallengeTemplate {
   id: string
   title: string
   description: string
-  type: "immediate" | "cascading" | "strategic" | "crisis" | "climate"
+  type: "immediate" | "cascading" | "strategic" | "crisis" | "climate" | "diplomatic" | "geopolitical" | "pollution"
   triggerConditions: {
     actions?: string[]
     roles?: string[]
@@ -149,6 +166,9 @@ interface ChallengeTemplate {
     climateEvents?: string[]
     actionCount?: number
     turnRange?: { min: number; max: number }
+    countryTypes?: string[]
+    diplomaticThresholds?: Record<string, { min?: number; max?: number }>
+    pollutionThresholds?: Record<string, { min?: number; max?: number }>
   }
   dynamicElements: {
     titleVariables?: string[]
@@ -161,6 +181,7 @@ interface ChallengeTemplate {
   baseRewards: Record<string, number>
   basePenalties: Record<string, number>
   complexity: number
+  countrySpecific?: string[]
 }
 
 const roles = [
@@ -220,6 +241,45 @@ const actions = {
       tags: ["legal", "international", "downstream_only"],
       countries: ["riverlandia", "deltopia", "desert_emirates"],
     },
+    {
+      key: "pollution_regulations",
+      name: "Enforce Pollution Regulations",
+      cost: 5,
+      impact: {
+        environmentalHealth: 15,
+        economic: -10,
+        public: 5,
+        waterQuality: { pollutionLevel: -15, waterTreatmentCapacity: 5, environmentalDamage: -10 },
+      },
+      tags: ["regulation", "pollution", "enforcement"],
+      countries: ["all"],
+    },
+    {
+      key: "water_quality_standards",
+      name: "Implement Water Quality Standards",
+      cost: 4,
+      impact: {
+        environmentalHealth: 10,
+        diplomatic: 5,
+        economic: -5,
+        waterQuality: { pollutionLevel: -10, internationalStandards: true, disputeLevel: "minor" },
+      },
+      tags: ["regulation", "standards", "quality"],
+      countries: ["all"],
+    },
+    {
+      key: "treatment_facilities",
+      name: "Build Treatment Facilities",
+      cost: 7,
+      impact: {
+        environmentalHealth: 20,
+        economic: -15,
+        public: 10,
+        waterQuality: { pollutionLevel: -25, waterTreatmentCapacity: 30, healthImpacts: -20 },
+      },
+      tags: ["infrastructure", "treatment", "health"],
+      countries: ["all"],
+    },
   ],
   industry: [
     {
@@ -254,6 +314,44 @@ const actions = {
       tags: ["trade", "dependency", "downstream_only"],
       countries: ["desert_emirates", "deltopia"],
     },
+    {
+      key: "clean_production",
+      name: "Implement Clean Production",
+      cost: 6,
+      impact: {
+        environmentalHealth: 15,
+        economic: -5,
+        public: 10,
+        waterQuality: { pollutionLevel: -20, environmentalDamage: -15 },
+      },
+      tags: ["technology", "pollution", "industry"],
+      countries: ["all"],
+    },
+    {
+      key: "industrial_monitoring",
+      name: "Industrial Discharge Monitoring",
+      cost: 3,
+      impact: {
+        environmentalHealth: 5,
+        economic: -2,
+        waterQuality: { pollutionLevel: -5, monitoringEfficiency: 25 },
+      },
+      tags: ["monitoring", "pollution", "regulation"],
+      countries: ["all"],
+    },
+    {
+      key: "pollution_treatment",
+      name: "Industrial Wastewater Treatment",
+      cost: 8,
+      impact: {
+        environmentalHealth: 20,
+        economic: -10,
+        diplomatic: 5,
+        waterQuality: { pollutionLevel: -30, waterTreatmentCapacity: 20, healthImpacts: -15 },
+      },
+      tags: ["treatment", "technology", "pollution"],
+      countries: ["all"],
+    },
   ],
   environmental: [
     {
@@ -286,6 +384,44 @@ const actions = {
       cost: 6,
       impact: { environmental: 35, climateResilience: 18, water: 10, economic: -8 },
       tags: ["biodiversity", "protection", "climate"],
+      countries: ["all"],
+    },
+    {
+      key: "water_quality_monitoring",
+      name: "Water Quality Monitoring Network",
+      cost: 4,
+      impact: {
+        environmentalHealth: 10,
+        public: 5,
+        waterQuality: { monitoringEfficiency: 40, pollutionLevel: -5 },
+      },
+      tags: ["monitoring", "quality", "data"],
+      countries: ["all"],
+    },
+    {
+      key: "ecosystem_restoration",
+      name: "Aquatic Ecosystem Restoration",
+      cost: 7,
+      impact: {
+        environmentalHealth: 25,
+        economic: -5,
+        public: 10,
+        waterQuality: { environmentalDamage: -30, pollutionLevel: -15 },
+      },
+      tags: ["restoration", "ecosystem", "biodiversity"],
+      countries: ["all"],
+    },
+    {
+      key: "pollution_litigation",
+      name: "Pollution Litigation Campaign",
+      cost: 5,
+      impact: {
+        environmentalHealth: 15,
+        economic: -10,
+        public: 5,
+        waterQuality: { pollutionLevel: -20, disputeLevel: "moderate" },
+      },
+      tags: ["legal", "enforcement", "pollution"],
       countries: ["all"],
     },
   ],
@@ -322,170 +458,333 @@ const actions = {
       tags: ["technology", "cooperation", "wealthy_only"],
       countries: ["highland_federation", "desert_emirates"],
     },
+    {
+      key: "water_quality_agreement",
+      name: "Water Quality Treaty",
+      cost: 6,
+      impact: {
+        diplomatic: 25,
+        environmentalHealth: 15,
+        economic: -5,
+        waterQuality: { disputeLevel: "none", internationalStandards: true },
+      },
+      tags: ["treaty", "quality", "cooperation"],
+      countries: ["all"],
+    },
+    {
+      key: "pollution_mediation",
+      name: "Cross-Border Pollution Mediation",
+      cost: 4,
+      impact: {
+        diplomatic: 20,
+        environmentalHealth: 10,
+        waterQuality: { disputeLevel: "minor" },
+      },
+      tags: ["mediation", "pollution", "diplomatic"],
+      countries: ["all"],
+    },
+    {
+      key: "diplomatic_protest",
+      name: "File Diplomatic Protest",
+      cost: 3,
+      impact: {
+        diplomatic: -15,
+        geopoliticalPower: 5,
+        public: 10,
+        waterQuality: { disputeLevel: "severe" },
+      },
+      tags: ["protest", "diplomatic", "downstream_only"],
+      countries: ["riverlandia", "deltopia", "desert_emirates"],
+    },
   ],
 }
 
-const climateTrends = [
+// Pollution challenge templates
+const pollutionChallengeTemplates: ChallengeTemplate[] = [
   {
-    id: "glacier_melt",
-    name: "Glacier Melt Acceleration",
-    description: "Glaciers are melting at an alarming rate, affecting water supply.",
-    progression: 0,
-    effects: { water: -5, climateResilience: -3, seaLevel: 2 },
-    threshold: 75,
-    triggered: false,
-  },
-  {
-    id: "desertification",
-    name: "Desertification Expansion",
-    description: "Arid regions are expanding, reducing arable land and water availability.",
-    progression: 0,
-    effects: { environmental: -4, water: -3, economic: -2 },
-    threshold: 60,
-    triggered: false,
-  },
-  {
-    id: "sea_level_rise",
-    name: "Accelerated Sea Level Rise",
-    description: "Rising sea levels threaten coastal communities and ecosystems.",
-    progression: 0,
-    effects: { seaLevel: 3, extremeWeatherRisk: 2, environmental: -2 },
-    threshold: 80,
-    triggered: false,
-  },
-]
-
-const climateEventTemplates = [
-  {
-    type: "drought",
-    name: "Severe Drought",
-    icon: Sun,
-    severityLevels: {
-      minor: { duration: 2, effects: { water: -5, economic: -3 } },
-      moderate: { duration: 3, effects: { water: -10, economic: -5, public: -3 } },
-      severe: { duration: 4, effects: { water: -15, economic: -8, public: -5, environmental: -3 } },
-      extreme: { duration: 5, effects: { water: -20, economic: -12, public: -8, environmental: -5 } },
-    },
-    adaptationOptions: ["water_rationing", "efficiency", "conservation"],
-  },
-  {
-    type: "flood",
-    name: "Major Flood",
-    icon: Waves,
-    severityLevels: {
-      minor: { duration: 2, effects: { water: 5, economic: -2 } },
-      moderate: { duration: 3, effects: { water: 10, economic: -4, public: -2 } },
-      severe: { duration: 4, effects: { water: 15, economic: -6, public: -4, environmental: -2 } },
-      extreme: { duration: 5, effects: { water: 20, economic: -8, public: -6, environmental: -4 } },
-    },
-    adaptationOptions: ["infrastructure", "delta_restoration", "cooperation"],
-  },
-  {
-    type: "heatwave",
-    name: "Extreme Heatwave",
-    icon: Thermometer,
-    severityLevels: {
-      minor: { duration: 2, effects: { economic: -2, public: -1 } },
-      moderate: { duration: 3, effects: { economic: -4, public: -3, water: -2 } },
-      severe: { duration: 4, effects: { economic: -6, public: -5, water: -4, environmental: -1 } },
-      extreme: { duration: 5, effects: { economic: -8, public: -7, water: -6, environmental: -2 } },
-    },
-    adaptationOptions: ["water_rationing", "conservation", "efficiency"],
-  },
-]
-
-const challengeTemplates: ChallengeTemplate[] = [
-  {
-    id: "water_shortage",
-    title: "Address Critical Water Shortage",
-    description: "Water levels have dropped to dangerous levels. Implement emergency measures.",
-    type: "crisis",
+    id: "cross_border_pollution",
+    title: "Cross-Border Pollution Crisis",
+    description: "Industrial pollution from upstream is contaminating your water supply, causing diplomatic tensions.",
+    type: "pollution",
     triggerConditions: {
-      stateThresholds: { waterLevel: { max: 30 } },
+      countryTypes: ["downstream"],
+      pollutionThresholds: { pollutionLevel: { min: 60 } },
     },
     dynamicElements: {
       requirements: {
-        base: { publicSupport: 50 },
-        scaling: { publicSupport: -5 },
+        base: { diplomatic: 60, environmentalHealth: 50 },
+        scaling: { diplomatic: 5 },
       },
     },
-    baseRewards: { waterLevel: 15, publicSupport: 10 },
-    basePenalties: { publicSupport: -15, economicHealth: -10 },
+    baseRewards: {
+      diplomatic: 20,
+      environmentalHealth: 15,
+      waterQuality: { pollutionLevel: -20, disputeLevel: "minor" },
+    },
+    basePenalties: { diplomatic: -15, environmentalHealth: -10, public: -15 },
     complexity: 3,
+    countrySpecific: ["riverlandia", "deltopia"],
   },
   {
-    id: "public_unrest",
-    title: "Quell Public Unrest Over Water Policies",
-    description: "Public dissatisfaction is rising due to recent water management decisions.",
-    type: "immediate",
+    id: "industrial_contamination",
+    title: "Industrial Contamination Emergency",
+    description: "A major industrial accident has released toxic chemicals into the water system.",
+    type: "pollution",
     triggerConditions: {
-      stateThresholds: { publicSupport: { max: 40 } },
+      roles: ["industry"],
+      pollutionThresholds: { pollutionLevel: { min: 40 } },
     },
     dynamicElements: {
       requirements: {
-        base: { publicSupport: 60 },
-        scaling: { publicSupport: 5 },
-      },
-    },
-    baseRewards: { publicSupport: 20, diplomaticRelations: 5 },
-    basePenalties: { publicSupport: -20, economicHealth: -5 },
-    complexity: 2,
-  },
-  {
-    id: "economic_downturn",
-    title: "Mitigate Economic Downturn Due to Water Scarcity",
-    description: "Water scarcity is negatively impacting key industries and economic stability.",
-    type: "strategic",
-    triggerConditions: {
-      stateThresholds: { economicHealth: { max: 50 } },
-    },
-    dynamicElements: {
-      requirements: {
-        base: { economicHealth: 60 },
-        scaling: { economicHealth: 5 },
-      },
-    },
-    baseRewards: { economicHealth: 15, resources: 20 },
-    basePenalties: { economicHealth: -15, publicSupport: -10 },
-    complexity: 4,
-  },
-  {
-    id: "environmental_degradation",
-    title: "Reverse Environmental Degradation",
-    description: "Environmental health is declining, threatening long-term sustainability.",
-    type: "cascading",
-    triggerConditions: {
-      stateThresholds: { environmentalHealth: { max: 40 } },
-    },
-    dynamicElements: {
-      requirements: {
-        base: { environmentalHealth: 60 },
+        base: { environmentalHealth: 60, public: 50 },
         scaling: { environmentalHealth: 5 },
       },
     },
-    baseRewards: { environmentalHealth: 20, climateResilience: 10 },
-    basePenalties: { environmentalHealth: -20, economicHealth: -5 },
-    complexity: 3,
+    baseRewards: { environmentalHealth: 20, public: 15, waterQuality: { pollutionLevel: -25, healthImpacts: -20 } },
+    basePenalties: { environmentalHealth: -20, public: -25, economic: -15 },
+    complexity: 4,
+    countrySpecific: ["all"],
   },
   {
-    id: "diplomatic_tensions",
-    title: "Resolve Diplomatic Tensions Over Water Rights",
-    description: "Tensions with neighboring countries are escalating due to disputes over water resources.",
-    type: "strategic",
+    id: "water_quality_standards",
+    title: "International Water Quality Standards",
+    description: "International organizations are pressuring for compliance with water quality standards.",
+    type: "pollution",
     triggerConditions: {
-      stateThresholds: { diplomaticRelations: { max: 40 } },
+      pollutionThresholds: { pollutionLevel: { min: 50 } },
+      diplomaticThresholds: { diplomatic: { min: 40 } },
     },
     dynamicElements: {
       requirements: {
-        base: { diplomaticRelations: 60 },
-        scaling: { diplomaticRelations: 5 },
+        base: { environmentalHealth: 55, resources: 30 },
+        scaling: { resources: 10 },
       },
     },
-    baseRewards: { diplomaticRelations: 20, geopoliticalPower: 5 },
-    basePenalties: { diplomaticRelations: -20, economicHealth: -5 },
+    baseRewards: { diplomatic: 25, environmentalHealth: 15, waterQuality: { internationalStandards: true } },
+    basePenalties: { diplomatic: -20, economic: -15 },
+    complexity: 3,
+    countrySpecific: ["all"],
+  },
+  {
+    id: "public_health_crisis",
+    title: "Water Pollution Health Crisis",
+    description: "Contaminated drinking water is causing widespread health issues among the population.",
+    type: "pollution",
+    triggerConditions: {
+      pollutionThresholds: { healthImpacts: { min: 60 } },
+    },
+    dynamicElements: {
+      requirements: {
+        base: { public: 60, resources: 25 },
+        scaling: { public: 5 },
+      },
+    },
+    baseRewards: { public: 30, waterQuality: { healthImpacts: -30, pollutionLevel: -15 } },
+    basePenalties: { public: -25, economic: -20 },
     complexity: 4,
+    countrySpecific: ["all"],
   },
 ]
+
+// Pollution events
+const pollutionEvents = [
+  {
+    title: "Industrial Discharge Incident",
+    description: "A factory has illegally discharged untreated wastewater into the river system.",
+    type: "pollution" as const,
+    effects: {
+      environmentalHealth: -15,
+      public: -10,
+      waterQuality: { pollutionLevel: 20, environmentalDamage: 15, healthImpacts: 10 },
+    },
+    duration: 3,
+  },
+  {
+    title: "Agricultural Runoff Surge",
+    description: "Heavy rains have washed fertilizers and pesticides from farmlands into water sources.",
+    type: "pollution" as const,
+    effects: {
+      environmentalHealth: -10,
+      water: -5,
+      waterQuality: { pollutionLevel: 15, environmentalDamage: 20 },
+    },
+    duration: 2,
+  },
+  {
+    title: "Cross-Border Pollution Complaint",
+    description: "A neighboring country has filed a formal complaint about water pollution from your territory.",
+    type: "pollution" as const,
+    effects: {
+      diplomatic: -15,
+      geopoliticalPower: -5,
+      waterQuality: { disputeLevel: "moderate" },
+    },
+    duration: 4,
+  },
+  {
+    title: "Urban Sewage Overflow",
+    description: "Heavy rainfall has caused urban sewage systems to overflow into water sources.",
+    type: "pollution" as const,
+    effects: {
+      environmentalHealth: -10,
+      public: -15,
+      waterQuality: { pollutionLevel: 25, healthImpacts: 20 },
+    },
+    duration: 2,
+  },
+]
+
+// Sample pollution sources for different countries
+const countryPollutionSources: Record<string, PollutionSource[]> = {
+  alpinia: [
+    {
+      id: "alp_mining_1",
+      name: "Highland Mining Operations",
+      type: "industrial",
+      severity: 45,
+      location: "Northern Mountains",
+      description: "Metal mining operations releasing heavy metals into mountain streams.",
+      origin: "alpinia",
+      crossBorder: true,
+    },
+    {
+      id: "alp_urban_1",
+      name: "Capital City Runoff",
+      type: "urban",
+      severity: 30,
+      location: "Capital Region",
+      description: "Urban runoff from the capital city affecting local water quality.",
+      origin: "alpinia",
+      crossBorder: false,
+    },
+  ],
+  highland_federation: [
+    {
+      id: "hf_industry_1",
+      name: "Federation Industrial Zone",
+      type: "industrial",
+      severity: 55,
+      location: "Eastern Plateau",
+      description: "Large industrial complex with multiple factories releasing chemical waste.",
+      origin: "highland_federation",
+      crossBorder: true,
+    },
+    {
+      id: "hf_agri_1",
+      name: "Highland Agriculture",
+      type: "agricultural",
+      severity: 35,
+      location: "Southern Valleys",
+      description: "Intensive agriculture using fertilizers and pesticides.",
+      origin: "highland_federation",
+      crossBorder: true,
+    },
+  ],
+  riverlandia: [
+    {
+      id: "riv_industry_1",
+      name: "Riverside Manufacturing",
+      type: "industrial",
+      severity: 50,
+      location: "Central Valley",
+      description: "Manufacturing facilities located along the main river.",
+      origin: "riverlandia",
+      crossBorder: true,
+    },
+    {
+      id: "riv_agri_1",
+      name: "Intensive Farming District",
+      type: "agricultural",
+      severity: 60,
+      location: "Fertile Plains",
+      description: "Large-scale farming with heavy use of agrochemicals.",
+      origin: "riverlandia",
+      crossBorder: false,
+    },
+  ],
+  deltopia: [
+    {
+      id: "del_urban_1",
+      name: "Delta Metropolis",
+      type: "urban",
+      severity: 65,
+      location: "Main Delta",
+      description: "Dense urban area with inadequate sewage treatment.",
+      origin: "deltopia",
+      crossBorder: false,
+    },
+    {
+      id: "del_industry_1",
+      name: "Coastal Industrial Complex",
+      type: "industrial",
+      severity: 55,
+      location: "Eastern Coast",
+      description: "Heavy industries located near the coast with ocean discharge.",
+      origin: "deltopia",
+      crossBorder: false,
+    },
+  ],
+  desert_emirates: [
+    {
+      id: "de_industry_1",
+      name: "Oil Refineries",
+      type: "industrial",
+      severity: 70,
+      location: "Northern Region",
+      description: "Oil refineries with significant water contamination issues.",
+      origin: "desert_emirates",
+      crossBorder: false,
+    },
+    {
+      id: "de_urban_1",
+      name: "Luxury Resort Development",
+      type: "urban",
+      severity: 40,
+      location: "Coastal Zone",
+      description: "Luxury tourism development with wastewater discharge issues.",
+      origin: "desert_emirates",
+      crossBorder: false,
+    },
+  ],
+}
+
+// Cross-border pollution sources
+const crossBorderPollution: Record<string, PollutionSource[]> = {
+  riverlandia: [
+    {
+      id: "alp_to_riv_1",
+      name: "Upstream Mining Discharge",
+      type: "industrial",
+      severity: 55,
+      location: "Upper River",
+      description: "Mining waste from Alpinia flowing downstream into Riverlandia's water system.",
+      origin: "alpinia",
+      crossBorder: true,
+    },
+  ],
+  deltopia: [
+    {
+      id: "riv_to_del_1",
+      name: "Agricultural Runoff",
+      type: "agricultural",
+      severity: 60,
+      location: "River Mouth",
+      description: "Agricultural chemicals from Riverlandia farms flowing into the delta.",
+      origin: "riverlandia",
+      crossBorder: true,
+    },
+    {
+      id: "alp_to_del_1",
+      name: "Long-Distance Industrial Pollution",
+      type: "industrial",
+      severity: 40,
+      location: "Main River Channel",
+      description: "Industrial pollutants from Alpinia reaching the delta after traveling the entire river.",
+      origin: "alpinia",
+      crossBorder: true,
+    },
+  ],
+}
 
 const WaterDiplomacyGame: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -501,6 +800,16 @@ const WaterDiplomacyGame: React.FC = () => {
     adaptationLevel: 30,
     waterControl: 50,
     geopoliticalPower: 50,
+    waterQuality: {
+      pollutionLevel: 30,
+      contaminationSources: [],
+      waterTreatmentCapacity: 40,
+      monitoringEfficiency: 30,
+      healthImpacts: 20,
+      environmentalDamage: 25,
+      internationalStandards: false,
+      disputeLevel: "none",
+    },
   })
 
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
@@ -518,25 +827,16 @@ const WaterDiplomacyGame: React.FC = () => {
     extremeWeatherRisk: 25,
   })
 
-  const [messages, setMessages] = useState<GameMessage[]>([
-    {
-      id: "1",
-      message:
-        "Welcome to the Water Diplomacy Simulation. A severe drought has hit the region, and climate change is intensifying weather patterns.",
-      type: "event",
-      timestamp: new Date(),
-    },
-  ])
-
+  const [messages, setMessages] = useState<GameMessage[]>([])
   const [actionHistory, setActionHistory] = useState<ActionHistory[]>([])
   const [activeChallenges, setActiveChallenges] = useState<DynamicChallenge[]>([])
   const [activeClimateEvents, setActiveClimateEvents] = useState<ClimateEvent[]>([])
-  const [climateTrendProgress, setClimateTrendProgress] = useState<ClimateTrend[]>(
-    climateTrends.map((trend) => ({ ...trend, progression: 0, triggered: false })),
-  )
+  const [activeGeopoliticalEvents, setActiveGeopoliticalEvents] = useState<GeopoliticalEvent[]>([])
+  const [climateTrendProgress, setClimateTrendProgress] = useState<ClimateTrend[]>([])
   const [showAIRecommendations, setShowAIRecommendations] = useState(false)
   const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[]>([])
   const [showQuickHelp, setShowQuickHelp] = useState(true)
+  const [showPollutionDetails, setShowPollutionDetails] = useState(false)
 
   // Define addMessage first, before any other functions that use it
   const addMessage = useCallback((message: string, type: GameMessage["type"]) => {
@@ -551,214 +851,159 @@ const WaterDiplomacyGame: React.FC = () => {
 
   const handleCountrySelection = (country: Country) => {
     setSelectedCountry(country)
+
+    // Initialize pollution sources based on country
+    const localSources = countryPollutionSources[country.id] || []
+    let incomingSources: PollutionSource[] = []
+
+    // Add cross-border pollution for downstream countries
+    if (country.type === "downstream") {
+      incomingSources = crossBorderPollution[country.id] || []
+    }
+
+    // Set initial pollution level based on country type
+    const initialPollutionLevel = country.type === "downstream" ? 50 : 30
+    const initialDisputeLevel = country.type === "downstream" ? "moderate" : "none"
+
+    // Set game state with country-specific values
     setGameState({
       ...country.startingStats,
       currentRole: "government",
       turn: 1,
+      waterQuality: {
+        pollutionLevel: initialPollutionLevel,
+        contaminationSources: [...localSources, ...incomingSources],
+        waterTreatmentCapacity: country.type === "downstream" ? 30 : 50,
+        monitoringEfficiency: 30,
+        healthImpacts: country.type === "downstream" ? 40 : 20,
+        environmentalDamage: country.type === "downstream" ? 45 : 25,
+        internationalStandards: false,
+        disputeLevel: initialDisputeLevel,
+      },
     })
+
     setGameInitialized(true)
+
+    // Add initial messages
     addMessage(
       `Welcome to ${country.name}! You are now leading this ${country.type} nation in the hydro-political simulation.`,
       "event",
     )
-    addMessage(
-      `Your country controls ${country.startingStats.waterControl}% of regional water resources and has ${country.startingStats.geopoliticalPower}% geopolitical power.`,
-      "event",
-    )
+
+    if (country.type === "downstream") {
+      addMessage(
+        `As a downstream country, you're receiving water that may be polluted by upstream activities. Monitor water quality closely.`,
+        "pollution",
+      )
+    } else {
+      addMessage(
+        `As a source country, your activities can affect downstream water quality. Be mindful of potential diplomatic consequences.`,
+        "pollution",
+      )
+    }
   }
 
-  // Climate System Functions
-  const applyClimateEffects = useCallback((effects: Record<string, number>) => {
-    setGameState((prev) => ({
-      ...prev,
-      waterLevel: Math.max(0, Math.min(100, prev.waterLevel + (effects.water || 0))),
-      publicSupport: Math.max(0, Math.min(100, prev.publicSupport + (effects.public || 0))),
-      economicHealth: Math.max(0, Math.min(100, prev.economicHealth + (effects.economic || 0))),
-      environmentalHealth: Math.max(0, Math.min(100, prev.environmentalHealth + (effects.environmental || 0))),
-      diplomaticRelations: Math.max(0, Math.min(100, prev.diplomaticRelations + (effects.diplomaticRelations || 0))),
-      climateResilience: Math.max(0, Math.min(100, prev.climateResilience + (effects.climateResilience || 0))),
-      adaptationLevel: Math.max(0, Math.min(100, prev.adaptationLevel + (effects.adaptationLevel || 0))),
-      resources: prev.resources + (effects.resources || 0),
-      waterControl: Math.max(0, Math.min(100, prev.waterControl + (effects.waterControl || 0))),
-      geopoliticalPower: Math.max(0, Math.min(100, prev.geopoliticalPower + (effects.geopoliticalPower || 0))),
-    }))
-  }, [])
-
-  const updateClimateState = useCallback(() => {
-    // Only update climate state on turn changes
-    setClimateState((prev) => {
-      // Skip update if we're not at a new turn
-      if (gameState.turn % 1 !== 0) return prev
-
+  // Apply effects to game state including water quality
+  const applyEffects = useCallback((effects: Record<string, any>) => {
+    setGameState((prev) => {
       const newState = { ...prev }
 
-      // Seasonal progression
-      const seasons: Array<"spring" | "summer" | "autumn" | "winter"> = ["spring", "summer", "autumn", "winter"]
-      if (gameState.turn % 4 === 0) {
-        const currentIndex = seasons.indexOf(prev.currentSeason)
-        newState.currentSeason = seasons[(currentIndex + 1) % 4]
+      // Apply standard numeric effects
+      if (effects.water) newState.waterLevel = Math.max(0, Math.min(100, prev.waterLevel + effects.water))
+      if (effects.public) newState.publicSupport = Math.max(0, Math.min(100, prev.publicSupport + effects.public))
+      if (effects.economic) newState.economicHealth = Math.max(0, Math.min(100, prev.economicHealth + effects.economic))
+      if (effects.environmentalHealth)
+        newState.environmentalHealth = Math.max(
+          0,
+          Math.min(100, prev.environmentalHealth + effects.environmentalHealth),
+        )
+      if (effects.diplomatic)
+        newState.diplomaticRelations = Math.max(0, Math.min(100, prev.diplomaticRelations + effects.diplomatic))
+      if (effects.climateResilience)
+        newState.climateResilience = Math.max(0, Math.min(100, prev.climateResilience + effects.climateResilience))
+      if (effects.adaptationLevel)
+        newState.adaptationLevel = Math.max(0, Math.min(100, prev.adaptationLevel + effects.adaptationLevel))
+      if (effects.resources) newState.resources = prev.resources + effects.resources
+      if (effects.waterControl)
+        newState.waterControl = Math.max(0, Math.min(100, prev.waterControl + effects.waterControl))
+      if (effects.geopoliticalPower)
+        newState.geopoliticalPower = Math.max(0, Math.min(100, prev.geopoliticalPower + effects.geopoliticalPower))
+
+      // Apply water quality effects if present
+      if (effects.waterQuality) {
+        const waterQuality = { ...prev.waterQuality }
+
+        if (effects.waterQuality.pollutionLevel) {
+          waterQuality.pollutionLevel = Math.max(
+            0,
+            Math.min(100, waterQuality.pollutionLevel + effects.waterQuality.pollutionLevel),
+          )
+        }
+
+        if (effects.waterQuality.waterTreatmentCapacity) {
+          waterQuality.waterTreatmentCapacity = Math.max(
+            0,
+            Math.min(100, waterQuality.waterTreatmentCapacity + effects.waterQuality.waterTreatmentCapacity),
+          )
+        }
+
+        if (effects.waterQuality.monitoringEfficiency) {
+          waterQuality.monitoringEfficiency = Math.max(
+            0,
+            Math.min(100, waterQuality.monitoringEfficiency + effects.waterQuality.monitoringEfficiency),
+          )
+        }
+
+        if (effects.waterQuality.healthImpacts) {
+          waterQuality.healthImpacts = Math.max(
+            0,
+            Math.min(100, waterQuality.healthImpacts + effects.waterQuality.healthImpacts),
+          )
+        }
+
+        if (effects.waterQuality.environmentalDamage) {
+          waterQuality.environmentalDamage = Math.max(
+            0,
+            Math.min(100, waterQuality.environmentalDamage + effects.waterQuality.environmentalDamage),
+          )
+        }
+
+        if (effects.waterQuality.internationalStandards !== undefined) {
+          waterQuality.internationalStandards = effects.waterQuality.internationalStandards
+        }
+
+        if (effects.waterQuality.disputeLevel) {
+          waterQuality.disputeLevel = effects.waterQuality.disputeLevel
+        }
+
+        newState.waterQuality = waterQuality
       }
-
-      // Global warming progression
-      newState.globalWarming += 0.02 + Math.random() * 0.03
-
-      // Climate stability degradation
-      newState.climateStability = Math.max(0, prev.climateStability - 0.5 - Math.random() * 1)
-
-      // Extreme weather risk calculation
-      newState.extremeWeatherRisk = Math.min(
-        100,
-        25 + newState.globalWarming * 8 + (100 - newState.climateStability) * 0.3,
-      )
-
-      // Seasonal temperature variations
-      const seasonalTemp = {
-        spring: 18,
-        summer: 28,
-        autumn: 20,
-        winter: 8,
-      }
-      newState.temperature = seasonalTemp[newState.currentSeason] + newState.globalWarming + (Math.random() - 0.5) * 10
-
-      // Precipitation variations
-      const seasonalPrecip = {
-        spring: 80,
-        summer: 60,
-        autumn: 85,
-        winter: 70,
-      }
-      newState.precipitation = Math.max(
-        0,
-        Math.min(100, seasonalPrecip[newState.currentSeason] + (Math.random() - 0.5) * 30),
-      )
 
       return newState
     })
-  }, [gameState.turn])
+  }, [])
 
-  const updateClimateEvents = useCallback(() => {
-    setActiveClimateEvents((prev) => {
-      // Skip if no active events
-      if (prev.length === 0) return prev
+  const generatePollutionEvent = useCallback(() => {
+    if (!selectedCountry) return
 
-      return prev
-        .map((event) => {
-          const updatedEvent = { ...event, remainingDuration: event.remainingDuration - 1 }
-
-          // Apply ongoing effects
-          if (updatedEvent.remainingDuration > 0) {
-            setTimeout(() => applyClimateEffects(event.effects.ongoing), 0)
-          } else {
-            // Apply long-term effects when event ends
-            setTimeout(() => {
-              applyClimateEffects(event.effects.longTerm)
-              addMessage(`🌤️ Climate Event: ${event.name} has ended.`, "climate")
-            }, 0)
-          }
-
-          return updatedEvent
-        })
-        .filter((event) => event.remainingDuration > 0)
-    })
-  }, [applyClimateEffects, addMessage])
-
-  const updateClimateTrends = useCallback(() => {
-    setClimateTrendProgress((prev) => {
-      // Skip if no trends or no changes
-      if (prev.length === 0) return prev
-
-      return prev.map((trend) => {
-        const newProgression = Math.min(100, trend.progression + Math.random() * 2 + climateState.globalWarming * 0.5)
-
-        if (!trend.triggered && newProgression >= trend.threshold) {
-          // Use setTimeout to avoid state updates during rendering
-          setTimeout(() => {
-            addMessage(`🌍 Climate Trend: ${trend.name} threshold reached!`, "warning")
-
-            // Apply trend effects to climate state
-            setClimateState((climateState) => ({
-              ...climateState,
-              extremeWeatherRisk: Math.min(
-                100,
-                climateState.extremeWeatherRisk + (trend.effects.extremeWeatherRisk || 0),
-              ),
-              temperature: climateState.temperature + (trend.effects.temperature || 0),
-              precipitation: Math.max(0, climateState.precipitation + (trend.effects.precipitation || 0)),
-              climateStability: Math.max(0, climateState.climateStability + (trend.effects.climateStability || 0)),
-              seaLevel: climateState.seaLevel + (trend.effects.seaLevel || 0),
-            }))
-
-            // Apply trend effects to game state
-            if (trend.effects.environmental) {
-              applyClimateEffects({ environmental: trend.effects.environmental })
-            }
-          }, 0)
-
-          return { ...trend, progression: newProgression, triggered: true }
-        }
-
-        return { ...trend, progression: newProgression }
-      })
-    })
-  }, [climateState.globalWarming, applyClimateEffects, addMessage])
-
-  const generateClimateEvent = useCallback(() => {
-    // Higher chance during extreme weather risk periods
-    const eventChance = (climateState.extremeWeatherRisk / 100) * 0.4
+    // Higher chance for downstream countries
+    const baseChance = selectedCountry.type === "downstream" ? 0.2 : 0.1
+    // Higher chance with higher pollution levels
+    const pollutionFactor = gameState.waterQuality.pollutionLevel / 200 // 0-0.5 additional chance
+    const eventChance = baseChance + pollutionFactor
 
     if (Math.random() < eventChance) {
-      const availableEvents = climateEventTemplates.filter(
-        (template) => !activeClimateEvents.some((event) => event.type === template.type),
-      )
+      // Select a random pollution event
+      const event = pollutionEvents[Math.floor(Math.random() * pollutionEvents.length)]
 
-      if (availableEvents.length > 0) {
-        const template = availableEvents[Math.floor(Math.random() * availableEvents.length)]
-        const severities: Array<"minor" | "moderate" | "severe" | "extreme"> = [
-          "minor",
-          "moderate",
-          "severe",
-          "extreme",
-        ]
+      addMessage(`🏭 Pollution Event: ${event.title} - ${event.description}`, "pollution")
 
-        // Severity based on climate conditions
-        let severityIndex = 0
-        if (climateState.extremeWeatherRisk > 60) severityIndex = 1
-        if (climateState.extremeWeatherRisk > 80) severityIndex = 2
-        if (climateState.globalWarming > 3) severityIndex = 3
-
-        // Add randomness
-        severityIndex = Math.min(3, severityIndex + Math.floor(Math.random() * 2))
-        const severity = severities[severityIndex]
-
-        const severityData = template.severityLevels[severity]
-
-        const newEvent: ClimateEvent = {
-          id: `${template.type}_${Date.now()}`,
-          name: `${severity.charAt(0).toUpperCase() + severity.slice(1)} ${template.name}`,
-          type: template.type,
-          severity,
-          duration: severityData.duration,
-          remainingDuration: severityData.duration,
-          effects: {
-            immediate: severityData.effects,
-            ongoing: Object.fromEntries(Object.entries(severityData.effects).map(([k, v]) => [k, v * 0.3])),
-            longTerm: Object.fromEntries(Object.entries(severityData.effects).map(([k, v]) => [k, v * 0.1])),
-          },
-          description: `A ${severity} ${template.name.toLowerCase()} is affecting the region.`,
-          icon: template.icon,
-          adaptationOptions: template.adaptationOptions,
-        }
-
-        setActiveClimateEvents((prev) => [...prev, newEvent])
-        addMessage(`🌪️ Climate Event: ${newEvent.name} has begun!`, "climate")
-
-        // Apply immediate effects with setTimeout to avoid render-time state updates
-        setTimeout(() => {
-          applyClimateEffects(newEvent.effects.immediate)
-        }, 0)
-      }
+      // Apply effects with a delay to avoid render-time state updates
+      setTimeout(() => {
+        applyEffects(event.effects)
+      }, 0)
     }
-  }, [climateState, activeClimateEvents, applyClimateEffects, addMessage])
+  }, [selectedCountry, gameState.waterQuality.pollutionLevel, addMessage, applyEffects])
 
   const takeAction = (actionKey: string) => {
     const currentRoleActions = actions[gameState.currentRole as keyof typeof actions]
@@ -779,81 +1024,47 @@ const WaterDiplomacyGame: React.FC = () => {
 
     setActionHistory((prev) => [...prev, actionRecord])
 
-    // Apply action effects including new climate metrics
+    // Apply action effects
+    applyEffects(action.impact)
+
+    // Deduct resources and advance turn
     setGameState((prev) => ({
       ...prev,
-      waterLevel: Math.max(0, Math.min(100, prev.waterLevel + (action.impact.water || 0))),
-      publicSupport: Math.max(0, Math.min(100, prev.publicSupport + (action.impact.public || 0))),
-      economicHealth: Math.max(0, Math.min(100, prev.economicHealth + (action.impact.economic || 0))),
-      environmentalHealth: Math.max(0, Math.min(100, prev.environmentalHealth + (action.impact.environmental || 0))),
-      diplomaticRelations: Math.max(0, Math.min(100, prev.diplomaticRelations + (action.impact.diplomatic || 0))),
-      climateResilience: Math.max(0, Math.min(100, prev.climateResilience + (action.impact.climateResilience || 0))),
-      adaptationLevel: Math.max(0, Math.min(100, prev.adaptationLevel + (action.impact.adaptationLevel || 0))),
-      resources: prev.resources - action.cost + (action.impact.resources || 0),
+      resources: prev.resources - action.cost,
       turn: prev.turn + 1,
-      waterControl: Math.max(0, Math.min(100, prev.waterControl + (action.impact.waterControl || 0))),
-      geopoliticalPower: Math.max(0, Math.min(100, prev.geopoliticalPower + (action.impact.geopoliticalPower || 0))),
     }))
 
     addMessage(`Action taken: ${action.name}`, "action")
-
-    // Climate adaptation bonus
-    if (action.tags.includes("climate") || action.tags.includes("adaptation")) {
-      const bonus = Math.floor(gameState.adaptationLevel / 20)
-      if (bonus > 0) {
-        addMessage(`Climate adaptation bonus: +${bonus} effectiveness!`, "success")
-        applyClimateEffects({ climateResilience: bonus })
-      }
-    }
 
     // Hide quick help after a few turns
     if (gameState.turn >= 3) {
       setShowQuickHelp(false)
     }
 
+    // Generate random events
     generateRandomEvent()
+    generatePollutionEvent()
   }
 
-  const completeChallenge = (challengeId: string, success: boolean) => {
-    const challenge = activeChallenges.find((c) => c.id === challengeId)
-    if (!challenge) return
+  const generateRandomEvent = () => {
+    const events = [
+      { message: "Heavy rainfall increases water reserves by 10%", effect: { water: 10 } },
+      { message: "Industrial accident contaminates water supply", effect: { water: -15, environmentalHealth: -10 } },
+      { message: "Public protests demand better water management", effect: { public: -20 } },
+      { message: "International aid package approved", effect: { resources: 30, diplomatic: 10 } },
+      { message: "New water-efficient technology discovered", effect: { water: 5, economic: 5 } },
+      {
+        message: "Climate research breakthrough improves adaptation",
+        effect: { adaptationLevel: 8, climateResilience: 5 },
+      },
+    ]
 
-    if (success) {
-      applyClimateEffects(challenge.rewards)
-      addMessage(`✅ Challenge Completed: ${challenge.title}`, "success")
-    } else {
-      applyClimateEffects(challenge.penalties)
-      addMessage(`❌ Challenge Failed: ${challenge.title}`, "crisis")
+    if (Math.random() < 0.3) {
+      const event = events[Math.floor(Math.random() * events.length)]
+      addMessage(event.message, "event")
+      applyEffects(event.effect)
     }
-
-    setActiveChallenges((prev) =>
-      prev.map((c) => (c.id === challengeId ? { ...c, status: success ? "completed" : "failed" } : c)),
-    )
   }
-
-  const checkChallengeCompletion = useCallback(() => {
-    activeChallenges.forEach((challenge) => {
-      if (challenge.status !== "active") return
-
-      if (challenge.deadline && gameState.turn > challenge.deadline) {
-        completeChallenge(challenge.id, false)
-        return
-      }
-
-      let requirementsMet = true
-      for (const [key, requiredValue] of Object.entries(challenge.requirements.conditions)) {
-        const currentValue = gameState[key as keyof GameState] as number
-        if (currentValue < requiredValue) {
-          requirementsMet = false
-          break
-        }
-      }
-
-      if (requirementsMet) {
-        completeChallenge(challenge.id, true)
-      }
-    })
-  }, [activeChallenges, gameState, applyClimateEffects])
 
   const switchRole = (newRole: string, reason: string) => {
     setGameState((prev) => ({ ...prev, currentRole: newRole }))
@@ -863,48 +1074,53 @@ const WaterDiplomacyGame: React.FC = () => {
   const generateAIRecommendations = () => {
     const recommendations: AIRecommendation[] = []
 
-    // Climate-specific recommendations
-    activeClimateEvents.forEach((event) => {
-      event.adaptationOptions.forEach((actionKey) => {
-        const currentRoleActions = actions[gameState.currentRole as keyof typeof actions]
-        const action = currentRoleActions?.find((a) => a.key === actionKey)
-        if (action) {
-          recommendations.push({
-            id: `climate_${event.id}_${actionKey}`,
-            actionKey,
-            title: `Address ${event.name}`,
-            description: `Use ${action.name} to mitigate the effects of the ongoing ${event.name.toLowerCase()}.`,
-            impact: event.severity === "extreme" ? "high" : event.severity === "severe" ? "high" : "medium",
-            urgency: event.remainingDuration <= 2 ? "high" : "medium",
-          })
-        }
-      })
-    })
-
-    // Climate resilience recommendations
-    if (gameState.climateResilience < 40) {
+    // Pollution-specific recommendations
+    if (gameState.waterQuality.pollutionLevel > 60) {
       recommendations.push({
-        id: "climate_resilience",
-        actionKey: "climate_adaptation",
-        title: "Improve Climate Resilience",
-        description: "Your region's climate resilience is low. Invest in adaptation measures.",
+        id: "pollution_crisis",
+        actionKey: "pollution_regulations",
+        title: "Address Pollution Crisis",
+        description: "Water pollution levels are critically high. Implement pollution regulations immediately.",
         impact: "high",
-        urgency: "medium",
+        urgency: "high",
+      })
+    }
+
+    if (gameState.waterQuality.disputeLevel === "severe" || gameState.waterQuality.disputeLevel === "critical") {
+      recommendations.push({
+        id: "pollution_diplomacy",
+        actionKey: "water_quality_agreement",
+        title: "Resolve Water Quality Disputes",
+        description:
+          "Diplomatic tensions over water quality are escalating. Consider negotiating a water quality treaty.",
+        impact: "high",
+        urgency: "high",
+      })
+    }
+
+    if (gameState.waterQuality.healthImpacts > 50) {
+      recommendations.push({
+        id: "health_crisis",
+        actionKey: "treatment_facilities",
+        title: "Address Health Crisis",
+        description:
+          "Water pollution is causing serious health impacts. Build treatment facilities to protect public health.",
+        impact: "high",
+        urgency: "high",
       })
     }
 
     // Existing recommendations...
-    activeChallenges
-      .filter((c) => c.status === "active")
-      .forEach((challenge) => {
-        recommendations.push({
-          id: `challenge_${challenge.id}`,
-          title: `Address ${challenge.title}`,
-          description: `Focus on meeting the requirements for this active challenge to avoid penalties.`,
-          impact: challenge.complexity > 2 ? "high" : "medium",
-          urgency: challenge.deadline && gameState.turn >= challenge.deadline - 1 ? "high" : "medium",
-        })
+    if (gameState.waterLevel < 30) {
+      recommendations.push({
+        id: "water_crisis",
+        actionKey: "water_rationing",
+        title: "Address Water Crisis",
+        description: "Water levels are critically low. Implement emergency rationing measures.",
+        impact: "high",
+        urgency: "high",
       })
+    }
 
     setAiRecommendations(recommendations)
     setShowAIRecommendations(true)
@@ -927,201 +1143,10 @@ const WaterDiplomacyGame: React.FC = () => {
     setShowAIRecommendations(false)
   }
 
-  const generateRandomEvent = () => {
-    const events = [
-      { message: "Heavy rainfall increases water reserves by 10%", effect: { water: 10 } },
-      { message: "Industrial accident contaminates water supply", effect: { water: -15, environmental: -10 } },
-      { message: "Public protests demand better water management", effect: { public: -20 } },
-      { message: "International aid package approved", effect: { resources: 30, diplomatic: 10 } },
-      { message: "New water-efficient technology discovered", effect: { water: 5, economic: 5 } },
-      {
-        message: "Climate research breakthrough improves adaptation",
-        effect: { adaptationLevel: 8, climateResilience: 5 },
-      },
-    ]
-
-    if (Math.random() < 0.3) {
-      const event = events[Math.floor(Math.random() * events.length)]
-      addMessage(event.message, "event")
-      applyClimateEffects(event.effect)
-    }
-  }
-
-  const generateDynamicChallenges = useCallback(() => {
-    const newChallenges: DynamicChallenge[] = []
-    const recentActions = actionHistory.slice(-5)
-    const currentTurn = gameState.turn
-
-    challengeTemplates.forEach((template) => {
-      let shouldTrigger = false
-
-      // Check action-based triggers
-      if (template.triggerConditions.actions) {
-        const hasRequiredActions = template.triggerConditions.actions.some((action) =>
-          recentActions.some((ah) => ah.actionKey === action),
-        )
-        if (hasRequiredActions) shouldTrigger = true
-      }
-
-      // Check climate event triggers
-      if (template.triggerConditions.climateEvents && shouldTrigger) {
-        const hasClimateEvent = template.triggerConditions.climateEvents.some((eventType) =>
-          activeClimateEvents.some((event) => event.type === eventType),
-        )
-        if (!hasClimateEvent) shouldTrigger = false
-      }
-
-      // Check climate condition triggers
-      if (template.triggerConditions.climateConditions && shouldTrigger) {
-        const conditions = template.triggerConditions.climateConditions
-        for (const [key, threshold] of Object.entries(conditions)) {
-          const climateValue = climateState[key as keyof ClimateState] as number
-          if (threshold.min && climateValue < threshold.min) shouldTrigger = false
-          if (threshold.max && climateValue > threshold.max) shouldTrigger = false
-        }
-      }
-
-      // Check other existing conditions...
-      if (template.triggerConditions.roles && shouldTrigger) {
-        const hasRequiredRole = template.triggerConditions.roles.includes(gameState.currentRole)
-        if (!hasRequiredRole) shouldTrigger = false
-      }
-
-      if (template.triggerConditions.stateThresholds && shouldTrigger) {
-        const thresholds = template.triggerConditions.stateThresholds
-        for (const [key, threshold] of Object.entries(thresholds)) {
-          const stateValue = gameState[key as keyof GameState] as number
-          if (threshold.min && stateValue < threshold.min) shouldTrigger = false
-          if (threshold.max && stateValue > threshold.max) shouldTrigger = false
-        }
-      }
-
-      const existingChallenge = activeChallenges.find((c) => c.id.startsWith(template.id))
-      if (existingChallenge) shouldTrigger = false
-
-      if (shouldTrigger && Math.random() < 0.7) {
-        const challenge = createChallengeFromTemplate(template, recentActions, currentTurn)
-        newChallenges.push(challenge)
-      }
-    })
-
-    if (newChallenges.length > 0) {
-      setActiveChallenges((prev) => [...prev, ...newChallenges])
-      newChallenges.forEach((challenge) => {
-        addMessage(`🎯 New Challenge: ${challenge.title}`, "challenge")
-      })
-    }
-  }, [actionHistory, gameState, activeChallenges, activeClimateEvents, climateState, addMessage])
-
-  const createChallengeFromTemplate = (
-    template: ChallengeTemplate,
-    recentActions: ActionHistory[],
-    currentTurn: number,
-  ): DynamicChallenge => {
-    const challengeId = `${template.id}_${Date.now()}`
-    const complexity = Math.min(template.complexity + Math.floor(currentTurn / 10), 5)
-
-    const requirements = { turns: 3, conditions: {} as Record<string, number> }
-    if (template.dynamicElements.requirements) {
-      const { base, scaling } = template.dynamicElements.requirements
-      for (const [key, baseValue] of Object.entries(base)) {
-        const scaledValue = baseValue + (scaling[key] || 0) * complexity
-        requirements.conditions[key] = scaledValue
-      }
-    }
-
-    const rewards = Object.fromEntries(
-      Object.entries(template.baseRewards).map(([key, value]) => [key, value * (1 + complexity * 0.2)]),
-    )
-    const penalties = Object.fromEntries(
-      Object.entries(template.basePenalties).map(([key, value]) => [key, value * (1 + complexity * 0.3)]),
-    )
-
-    let deadline: number | undefined
-    if (template.type === "immediate") {
-      deadline = currentTurn + 2
-    } else if (template.type === "crisis" || template.type === "climate") {
-      deadline = currentTurn + 3
-    }
-
-    return {
-      id: challengeId,
-      title: template.title,
-      description: template.description,
-      type: template.type,
-      triggerActions: recentActions.map((a) => a.actionKey),
-      triggerRoles: [gameState.currentRole],
-      requirements,
-      rewards,
-      penalties,
-      status: "active",
-      deadline,
-      complexity,
-      createdAt: currentTurn,
-    }
-  }
-
-  // Effect hooks
-  useEffect(() => {
-    updateClimateState()
-  }, [updateClimateState])
-
-  useEffect(() => {
-    updateClimateEvents()
-  }, [updateClimateEvents])
-
-  useEffect(() => {
-    updateClimateTrends()
-  }, [updateClimateTrends])
-
-  useEffect(() => {
-    generateClimateEvent()
-  }, [generateClimateEvent])
-
-  useEffect(() => {
-    generateDynamicChallenges()
-  }, [generateDynamicChallenges])
-
-  useEffect(() => {
-    checkChallengeCompletion()
-  }, [checkChallengeCompletion])
-
   const getStatusColor = (value: number) => {
     if (value >= 70) return "text-green-600"
     if (value >= 40) return "text-yellow-600"
     return "text-red-600"
-  }
-
-  const getChallengeIcon = (type: string) => {
-    switch (type) {
-      case "immediate":
-        return <Flame className="h-4 w-4 text-red-500" />
-      case "cascading":
-        return <TrendingUp className="h-4 w-4 text-orange-500" />
-      case "strategic":
-        return <Lightbulb className="h-4 w-4 text-blue-500" />
-      case "crisis":
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
-      case "climate":
-        return <CloudRain className="h-4 w-4 text-blue-600" />
-      default:
-        return <Target className="h-4 w-4" />
-    }
-  }
-
-  const getSeasonIcon = (season: string) => {
-    switch (season) {
-      case "spring":
-        return <Leaf className="h-4 w-4 text-green-500" />
-      case "summer":
-        return <Sun className="h-4 w-4 text-yellow-500" />
-      case "autumn":
-        return <Wind className="h-4 w-4 text-orange-500" />
-      case "winter":
-        return <Snowflake className="h-4 w-4 text-blue-500" />
-      default:
-        return <Sun className="h-4 w-4" />
-    }
   }
 
   const currentRole = roles.find((r) => r.id === gameState.currentRole)
@@ -1135,7 +1160,10 @@ const WaterDiplomacyGame: React.FC = () => {
           (action.countries.includes("wealthy_only") && selectedCountry.startingStats.economicHealth >= 70),
       )
     : []
-  const activeActiveChallenges = activeChallenges.filter((c) => c.status === "active")
+
+  const neighboringCountries = selectedCountry
+    ? countries.filter((c) => c.id !== selectedCountry.id && selectedCountry.neighbors.includes(c.name))
+    : []
 
   if (!gameInitialized) {
     return <CountrySelection onCountrySelect={handleCountrySelection} />
@@ -1151,15 +1179,12 @@ const WaterDiplomacyGame: React.FC = () => {
               <div>
                 <CardTitle className="text-3xl font-bold text-blue-800">Water Diplomacy Simulation</CardTitle>
                 <CardDescription>
-                  Turn {gameState.turn} - Managing water resources through adaptive diplomatic solutions
+                  Turn {gameState.turn} - Managing water resources and quality through diplomatic solutions
                 </CardDescription>
               </div>
               <div className="flex items-center gap-4">
                 <Badge variant="outline" className="text-lg px-4 py-2">
                   Resources: {gameState.resources}
-                </Badge>
-                <Badge variant="outline" className="text-lg px-4 py-2">
-                  Active Challenges: {activeActiveChallenges.length}
                 </Badge>
                 <Button onClick={generateAIRecommendations} variant="outline" className="gap-2">
                   <Bot className="h-4 w-4" />
@@ -1198,79 +1223,36 @@ const WaterDiplomacyGame: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Climate Status Bar */}
+        {/* Water Quality Status */}
         <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <CloudRain className="h-5 w-5" />
-              Climate Status
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-blue-800">
+                <Droplets className="h-5 w-5" />
+                Water Quality Status
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setShowPollutionDetails(!showPollutionDetails)}>
+                {showPollutionDetails ? "Hide Details" : "Show Details"}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                {getSeasonIcon(climateState.currentSeason)}
-                <div>
-                  <div className="font-medium capitalize">{climateState.currentSeason}</div>
-                  <div className="text-xs text-muted-foreground">Season</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Thermometer className="h-4 w-4 text-red-500" />
-                <div>
-                  <div className="font-medium">{climateState.temperature.toFixed(1)}°C</div>
-                  <div className="text-xs text-muted-foreground">Temperature</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Droplets className="h-4 w-4 text-blue-500" />
-                <div>
-                  <div className="font-medium">{climateState.precipitation.toFixed(0)}%</div>
-                  <div className="text-xs text-muted-foreground">Precipitation</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-green-500" />
-                <div>
-                  <div className={`font-medium ${getStatusColor(climateState.climateStability)}`}>
-                    {climateState.climateStability.toFixed(0)}%
-                  </div>
-                  <div className="text-xs text-muted-foreground">Stability</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-orange-500" />
-                <div>
-                  <div className={`font-medium ${getStatusColor(100 - climateState.extremeWeatherRisk)}`}>
-                    {climateState.extremeWeatherRisk.toFixed(0)}%
-                  </div>
-                  <div className="text-xs text-muted-foreground">Weather Risk</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-red-500" />
-                <div>
-                  <div className="font-medium text-red-600">+{climateState.globalWarming.toFixed(1)}°C</div>
-                  <div className="text-xs text-muted-foreground">Global Warming</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Waves className="h-4 w-4 text-blue-600" />
-                <div>
-                  <div className="font-medium">+{climateState.seaLevel.toFixed(0)}cm</div>
-                  <div className="text-xs text-muted-foreground">Sea Level</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Wind className="h-4 w-4 text-gray-500" />
-                <div>
-                  <div className="font-medium">{climateState.windSpeed.toFixed(0)} km/h</div>
-                  <div className="text-xs text-muted-foreground">Wind Speed</div>
-                </div>
-              </div>
-            </div>
+            <PollutionIndicator
+              waterQuality={gameState.waterQuality}
+              isDownstream={selectedCountry?.type === "downstream"}
+            />
           </CardContent>
         </Card>
+
+        {/* Pollution Details */}
+        {showPollutionDetails && selectedCountry && (
+          <PollutionDetails
+            waterQuality={gameState.waterQuality}
+            selectedCountry={selectedCountry}
+            neighboringCountries={neighboringCountries}
+            onTakeAction={takeAction}
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Game Area */}
@@ -1288,54 +1270,6 @@ const WaterDiplomacyGame: React.FC = () => {
                   ×
                 </Button>
               </div>
-            )}
-
-            {/* Active Climate Events */}
-            {activeClimateEvents.length > 0 && (
-              <Card className="border-orange-200 bg-orange-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-800">
-                    <CloudRain className="h-5 w-5" />
-                    Active Climate Events ({activeClimateEvents.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {activeClimateEvents.map((event) => (
-                      <Alert key={event.id} className="border-orange-200">
-                        <div className="flex items-start gap-3">
-                          <event.icon className="h-5 w-5 text-orange-600 mt-0.5" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold">{event.name}</h4>
-                              <div className="flex gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {event.severity}
-                                </Badge>
-                                <Badge variant="secondary" className="text-xs">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {event.remainingDuration} turns
-                                </Badge>
-                              </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
-                            <div className="text-xs">
-                              <strong>Adaptation Options:</strong>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {event.adaptationOptions.map((option) => (
-                                  <Badge key={option} variant="outline" className="text-xs">
-                                    {option.replace("_", " ")}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Alert>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             )}
 
             {/* Current Role */}
@@ -1363,101 +1297,12 @@ const WaterDiplomacyGame: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Dynamic Challenges */}
-            {activeActiveChallenges.length > 0 && (
-              <Card className="border-amber-200 bg-amber-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-amber-800">
-                    <Target className="h-5 w-5" />
-                    Active Challenges ({activeActiveChallenges.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {activeActiveChallenges.map((challenge) => (
-                      <Alert key={challenge.id} className="border-amber-200">
-                        <div className="flex items-start gap-3">
-                          {getChallengeIcon(challenge.type)}
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold">{challenge.title}</h4>
-                              <div className="flex gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {challenge.type}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  Complexity: {challenge.complexity}
-                                </Badge>
-                                {challenge.deadline && (
-                                  <Badge
-                                    variant={gameState.turn >= challenge.deadline - 1 ? "destructive" : "secondary"}
-                                    className="text-xs"
-                                  >
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    {challenge.deadline - gameState.turn} turns
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3">{challenge.description}</p>
-                            <div className="space-y-2">
-                              <div className="text-sm">
-                                <strong>Requirements:</strong>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                  {Object.entries(challenge.requirements.conditions).map(([key, value]) => (
-                                    <Badge
-                                      key={key}
-                                      variant={
-                                        (gameState[key as keyof GameState] as number) >= value
-                                          ? "default"
-                                          : "destructive"
-                                      }
-                                      className="text-xs"
-                                    >
-                                      {key}: {value}
-                                      {(gameState[key as keyof GameState] as number) >= value && " ✓"}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4 text-xs">
-                                <div>
-                                  <strong className="text-green-600">Rewards:</strong>
-                                  <div className="space-y-1">
-                                    {Object.entries(challenge.rewards).map(([key, value]) => (
-                                      <div key={key}>
-                                        {key}: +{value}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                                <div>
-                                  <strong className="text-red-600">Penalties:</strong>
-                                  <div className="space-y-1">
-                                    {Object.entries(challenge.penalties).map(([key, value]) => (
-                                      <div key={key}>
-                                        {key}: {value}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Alert>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Actions */}
             <Card>
               <CardHeader>
                 <CardTitle>Available Actions</CardTitle>
                 <CardDescription>
-                  Choose your strategy to address the water crisis, climate challenges, and active objectives
+                  Choose your strategy to address water crisis, pollution, and diplomatic challenges
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1682,74 +1527,6 @@ const WaterDiplomacyGame: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Climate Trends */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Climate Trends
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {climateTrendProgress.map((trend) => (
-                    <div key={trend.id}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium">{trend.name}</span>
-                        <span className={`text-xs ${trend.triggered ? "text-red-600" : "text-muted-foreground"}`}>
-                          {trend.progression.toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress value={trend.progression} className={`h-2 ${trend.triggered ? "bg-red-100" : ""}`} />
-                      <p className="text-xs text-muted-foreground mt-1">{trend.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Game Analytics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Game Analytics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="history" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="history">Action History</TabsTrigger>
-                    <TabsTrigger value="challenges">Challenge Log</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="history" className="space-y-2">
-                    <ScrollArea className="h-32">
-                      {actionHistory.slice(-5).map((action, index) => (
-                        <div key={index} className="text-sm p-2 border rounded mb-2">
-                          <div className="font-medium">{action.actionKey}</div>
-                          <div className="text-xs text-muted-foreground">
-                            Turn {action.turn} - {action.role}
-                          </div>
-                        </div>
-                      ))}
-                    </ScrollArea>
-                  </TabsContent>
-                  <TabsContent value="challenges" className="space-y-2">
-                    <ScrollArea className="h-32">
-                      {activeChallenges.slice(-5).map((challenge) => (
-                        <div key={challenge.id} className="text-sm p-2 border rounded mb-2">
-                          <div className="font-medium">{challenge.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {challenge.status} - Complexity {challenge.complexity}
-                          </div>
-                        </div>
-                      ))}
-                    </ScrollArea>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-
             {/* Messages Log */}
             <Card>
               <CardHeader>
@@ -1779,7 +1556,13 @@ const WaterDiplomacyGame: React.FC = () => {
                                         ? "bg-orange-50 border border-orange-200"
                                         : msg.type === "warning"
                                           ? "bg-yellow-50 border border-yellow-200"
-                                          : "bg-gray-50 border border-gray-200"
+                                          : msg.type === "pollution"
+                                            ? "bg-purple-50 border border-purple-200"
+                                            : msg.type === "diplomatic"
+                                              ? "bg-indigo-50 border border-indigo-200"
+                                              : msg.type === "conflict"
+                                                ? "bg-red-100 border border-red-300"
+                                                : "bg-gray-50 border border-gray-200"
                           }`}
                         >
                           <p className="font-medium">{msg.message}</p>

@@ -36,7 +36,7 @@ export interface Country {
   flag: string
 }
 
-const countries: Country[] = [
+export const countries: Country[] = [
   // Source Countries
   {
     id: "alpinia",

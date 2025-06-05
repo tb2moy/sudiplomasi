@@ -222,6 +222,70 @@ const helpTopics: HelpTopic[] = [
     tags: ["diplomacy", "leverage", "cooperation", "conflict"],
     category: "mechanics",
   },
+  {
+    id: "pollution-overview",
+    title: "Pollution & Water Quality",
+    content:
+      "Water pollution is a major source of conflict between countries sharing water resources. Pollution can come from industrial discharge, agricultural runoff, urban sewage, and natural sources. Poor water quality affects public health, environmental integrity, and diplomatic relations.",
+    tags: ["pollution", "quality", "contamination", "health"],
+    category: "mechanics",
+  },
+  {
+    id: "pollution-sources",
+    title: "Pollution Sources",
+    content:
+      "Pollution sources are categorized as industrial (factories, mining), agricultural (fertilizers, pesticides), urban (sewage, runoff), or natural (erosion, algae). Each source has a severity level and may affect multiple countries if located near borders or upstream.",
+    tags: ["sources", "industrial", "agricultural", "urban"],
+    category: "mechanics",
+  },
+  {
+    id: "cross-border-pollution",
+    title: "Cross-Border Pollution",
+    content:
+      "Downstream countries often receive pollution from upstream activities. This creates diplomatic tensions and can lead to formal complaints, international arbitration, or economic sanctions. Source countries must balance economic development with environmental responsibility.",
+    tags: ["cross-border", "diplomatic", "upstream", "downstream"],
+    category: "mechanics",
+  },
+  {
+    id: "water-treatment",
+    title: "Water Treatment Capacity",
+    content:
+      "Water treatment capacity represents your ability to clean polluted water before it reaches consumers or the environment. Higher treatment capacity reduces health impacts and environmental damage but requires significant investment and ongoing costs.",
+    tags: ["treatment", "capacity", "infrastructure", "health"],
+    category: "mechanics",
+  },
+  {
+    id: "pollution-disputes",
+    title: "Water Quality Disputes",
+    content:
+      "Water quality disputes range from minor diplomatic concerns to critical international crises. Disputes can be resolved through mediation, treaties, compensation agreements, or legal action. Unresolved disputes damage diplomatic relations and can trigger sanctions.",
+    tags: ["disputes", "diplomatic", "treaties", "legal"],
+    category: "mechanics",
+  },
+  {
+    id: "health-impacts",
+    title: "Health Impacts of Pollution",
+    content:
+      "Water pollution causes health problems ranging from minor illness to serious medical emergencies. High health impacts reduce public support, increase healthcare costs, and can trigger international humanitarian concerns. Treatment facilities and pollution prevention are key solutions.",
+    tags: ["health", "impacts", "medical", "public"],
+    category: "mechanics",
+  },
+  {
+    id: "environmental-damage",
+    title: "Environmental Damage",
+    content:
+      "Pollution damages aquatic ecosystems, reduces biodiversity, and affects fisheries and tourism. Environmental damage has long-term economic consequences and can trigger international environmental protection measures. Ecosystem restoration can help reverse damage.",
+    tags: ["environmental", "damage", "ecosystem", "biodiversity"],
+    category: "mechanics",
+  },
+  {
+    id: "pollution-actions",
+    title: "Pollution Control Actions",
+    content:
+      "Each role has specific actions to address pollution: Government can enforce regulations and build treatment facilities, Industry can implement clean production, Environmental advocates can monitor and litigate, International mediators can negotiate treaties and resolve disputes.",
+    tags: ["actions", "control", "regulations", "treaties"],
+    category: "mechanics",
+  },
 
   // Challenges
   {
