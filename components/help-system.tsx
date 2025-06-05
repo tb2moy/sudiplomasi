@@ -31,8 +31,6 @@ import {
   Bot,
 } from "lucide-react"
 
-import { getTranslation, type Language } from "@/lib/translations"
-
 interface HelpTopic {
   id: string
   title: string
@@ -416,13 +414,8 @@ const helpTopics: HelpTopic[] = [
   },
 ]
 
-interface HelpButtonProps {
-  language: Language
-}
-
-export function HelpButton({ language }: HelpButtonProps) {
+export function HelpButton() {
   const [open, setOpen] = useState(false)
-  const t = getTranslation(language)
 
   return (
     <>
@@ -430,7 +423,7 @@ export function HelpButton({ language }: HelpButtonProps) {
         <HelpCircle className="h-5 w-5" />
       </Button>
 
-      <HelpDialog open={open} setOpen={setOpen} language={language} />
+      <HelpDialog open={open} setOpen={setOpen} />
     </>
   )
 }
@@ -438,14 +431,12 @@ export function HelpButton({ language }: HelpButtonProps) {
 interface HelpDialogProps {
   open: boolean
   setOpen: (open: boolean) => void
-  language: Language
 }
 
-function HelpDialog({ open, setOpen, language }: HelpDialogProps) {
+function HelpDialog({ open, setOpen }: HelpDialogProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredTopics, setFilteredTopics] = useState<HelpTopic[]>(helpTopics)
   const [activeCategory, setActiveCategory] = useState("basics")
-  const t = getTranslation(language)
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -494,15 +485,15 @@ function HelpDialog({ open, setOpen, language }: HelpDialogProps) {
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             <HelpCircle className="h-6 w-6" />
-            {t("help.title")}
+            Water Diplomacy Game Help
           </DialogTitle>
-          <DialogDescription>{t("help.description")}</DialogDescription>
+          <DialogDescription>Learn about game mechanics, roles, challenges, and strategies</DialogDescription>
         </DialogHeader>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={t("help.searchPlaceholder")}
+            placeholder="Search for help topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -513,27 +504,27 @@ function HelpDialog({ open, setOpen, language }: HelpDialogProps) {
           <TabsList className="grid grid-cols-6">
             <TabsTrigger value="basics" className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("help.basics")}</span>
+              <span className="hidden sm:inline">Basics</span>
             </TabsTrigger>
             <TabsTrigger value="roles" className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("help.roles")}</span>
+              <span className="hidden sm:inline">Roles</span>
             </TabsTrigger>
             <TabsTrigger value="mechanics" className="flex items-center gap-1">
               <BarChart className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("help.mechanics")}</span>
+              <span className="hidden sm:inline">Mechanics</span>
             </TabsTrigger>
             <TabsTrigger value="challenges" className="flex items-center gap-1">
               <Target className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("help.challenges")}</span>
+              <span className="hidden sm:inline">Challenges</span>
             </TabsTrigger>
             <TabsTrigger value="climate" className="flex items-center gap-1">
               <CloudRain className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("help.climate")}</span>
+              <span className="hidden sm:inline">Climate</span>
             </TabsTrigger>
             <TabsTrigger value="interface" className="flex items-center gap-1">
               <Zap className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("help.interface")}</span>
+              <span className="hidden sm:inline">Interface</span>
             </TabsTrigger>
           </TabsList>
 
@@ -547,7 +538,7 @@ function HelpDialog({ open, setOpen, language }: HelpDialogProps) {
                   </div>
 
                   {searchQuery && getCategoryTopics(category).length === 0 ? (
-                    <p className="text-muted-foreground italic">{t("help.noTopics")}</p>
+                    <p className="text-muted-foreground italic">No matching topics in this category</p>
                   ) : (
                     <Accordion type="single" collapsible className="w-full">
                       {getCategoryTopics(category).map((topic) => (
@@ -574,48 +565,41 @@ function HelpDialog({ open, setOpen, language }: HelpDialogProps) {
         </Tabs>
 
         <DialogFooter className="flex justify-between items-center">
-          <div className="text-sm text-muted-foreground">
-            {filteredTopics.length} {t("help.topicsAvailable")}
-          </div>
-          <Button onClick={() => setOpen(false)}>{t("help.close")}</Button>
+          <div className="text-sm text-muted-foreground">{filteredTopics.length} help topics available</div>
+          <Button onClick={() => setOpen(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-interface QuickHelpTipsProps {
-  language: Language
-}
-
-export function QuickHelpTips({ language }: QuickHelpTipsProps) {
-  const t = getTranslation(language)
+export function QuickHelpTips() {
   return (
     <div className="space-y-3 p-4 border rounded-lg bg-blue-50 border-blue-200">
       <h3 className="font-semibold flex items-center gap-2">
         <HelpCircle className="h-4 w-4" />
-        {t("quickTips.title")}
+        Quick Tips
       </h3>
       <ul className="space-y-2 text-sm">
         <li className="flex items-start gap-2">
           <Droplets className="h-4 w-4 text-blue-500 mt-0.5" />
-          <span>{t("quickTips.tip1")}</span>
+          <span>Monitor your water levels closely - they affect all other metrics</span>
         </li>
         <li className="flex items-start gap-2">
           <Crown className="h-4 w-4 text-blue-500 mt-0.5" />
-          <span>{t("quickTips.tip2")}</span>
+          <span>Switch roles strategically to access different actions</span>
         </li>
         <li className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
-          <span>{t("quickTips.tip3")}</span>
+          <span>Prepare for climate events by investing in resilience</span>
         </li>
         <li className="flex items-start gap-2">
           <Bot className="h-4 w-4 text-purple-500 mt-0.5" />
-          <span>{t("quickTips.tip4")}</span>
+          <span>Use the AI Advisor when you're unsure about your next move</span>
         </li>
       </ul>
       <Separator />
-      <p className="text-xs text-muted-foreground">{t("quickTips.footer")}</p>
+      <p className="text-xs text-muted-foreground">Click the help button for detailed game information</p>
     </div>
   )
 }

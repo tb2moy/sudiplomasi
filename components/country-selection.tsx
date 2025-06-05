@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Mountain, Waves, Users, Zap, Leaf, Globe, Droplets, Shield, TrendingUp, MapPin } from "lucide-react"
-import { LanguageSelector, type Language } from "@/components/language-selector"
-import { getTranslation } from "@/lib/translations"
 
 export interface Country {
   id: string
@@ -251,14 +249,11 @@ export const countries: Country[] = [
 
 interface CountrySelectionProps {
   onCountrySelect: (country: Country) => void
-  language: Language
 }
 
-export function CountrySelection({ onCountrySelect, language }: CountrySelectionProps) {
+export function CountrySelection({ onCountrySelect }: CountrySelectionProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
   const [showDetails, setShowDetails] = useState(false)
-
-  const t = getTranslation(language)
 
   const sourceCountries = countries.filter((c) => c.type === "source")
   const downstreamCountries = countries.filter((c) => c.type === "downstream")
@@ -303,42 +298,15 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
     return "text-red-600"
   }
 
-  const getStatName = (stat: string) => {
-    const statNames: Record<string, keyof typeof t> = {
-      waterLevel: "waterLevel",
-      publicSupport: "publicSupport",
-      economicHealth: "economicHealth",
-      environmentalHealth: "environmentalHealth",
-      diplomaticRelations: "diplomaticRelations",
-      climateResilience: "climateResilience",
-      adaptationLevel: "adaptationLevel",
-      waterControl: "waterControl",
-      geopoliticalPower: "geopoliticalPower",
-    }
-    return t[statNames[stat]] || stat
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         <Card>
           <CardHeader className="text-center">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1" />
-              <div className="flex-1 text-center">
-                <CardTitle className="text-3xl font-bold text-blue-800">{t.chooseNation}</CardTitle>
-              </div>
-              <div className="flex-1 flex justify-end">
-                <LanguageSelector
-                  currentLanguage={language}
-                  onLanguageChange={(newLang) => {
-                    // Bu sadece görsel feedback için - gerçek dil değişikliği parent'ta olacak
-                    console.log("Language change requested:", newLang)
-                  }}
-                />
-              </div>
-            </div>
-            <CardDescription className="text-lg">{t.chooseNationDescription}</CardDescription>
+            <CardTitle className="text-3xl font-bold text-blue-800">Choose Your Nation</CardTitle>
+            <CardDescription className="text-lg">
+              Select a country to experience the hydro-political simulation from different perspectives
+            </CardDescription>
           </CardHeader>
         </Card>
 
@@ -347,9 +315,11 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mountain className="h-6 w-6 text-blue-600" />
-              {t.sourceCountries}
+              Source Countries (Upstream)
             </CardTitle>
-            <CardDescription>{t.sourceCountriesDescription}</CardDescription>
+            <CardDescription>
+              Control water sources and have strong negotiating positions, but face environmental pressures
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
@@ -362,42 +332,34 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <span className="text-2xl">{country.flag}</span>
-                      {t.countries[country.id as keyof typeof t.countries].name}
+                      {country.name}
                       <Badge variant="outline" className="ml-auto">
-                        {t.source}
+                        Source
                       </Badge>
                     </CardTitle>
-                    <CardDescription>{t.countries[country.id as keyof typeof t.countries].region}</CardDescription>
+                    <CardDescription>{country.region}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm mb-4">{t.countries[country.id as keyof typeof t.countries].description}</p>
+                    <p className="text-sm mb-4">{country.description}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <div className="flex items-center gap-1">
                           <Droplets className="h-3 w-3 text-blue-500" />
-                          <span>
-                            {t.waterLevel}: {country.startingStats.waterLevel}%
-                          </span>
+                          <span>Water: {country.startingStats.waterLevel}%</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Mountain className="h-3 w-3 text-gray-600" />
-                          <span>
-                            {t.waterControl}: {country.startingStats.waterControl}%
-                          </span>
+                          <span>Control: {country.startingStats.waterControl}%</span>
                         </div>
                       </div>
                       <div>
                         <div className="flex items-center gap-1">
                           <TrendingUp className="h-3 w-3 text-red-500" />
-                          <span>
-                            {t.geopoliticalPower}: {country.startingStats.geopoliticalPower}%
-                          </span>
+                          <span>Power: {country.startingStats.geopoliticalPower}%</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Zap className="h-3 w-3 text-yellow-500" />
-                          <span>
-                            {t.economicHealth}: {country.startingStats.economicHealth}%
-                          </span>
+                          <span>Economy: {country.startingStats.economicHealth}%</span>
                         </div>
                       </div>
                     </div>
@@ -413,9 +375,11 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Waves className="h-6 w-6 text-green-600" />
-              {t.downstreamCountries}
+              Downstream Countries
             </CardTitle>
-            <CardDescription>{t.downstreamCountriesDescription}</CardDescription>
+            <CardDescription>
+              Depend on upstream water flows but may have other economic or strategic advantages
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
@@ -428,42 +392,34 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <span className="text-2xl">{country.flag}</span>
-                      {t.countries[country.id as keyof typeof t.countries].name}
+                      {country.name}
                       <Badge variant="outline" className="ml-auto">
-                        {t.downstream}
+                        Downstream
                       </Badge>
                     </CardTitle>
-                    <CardDescription>{t.countries[country.id as keyof typeof t.countries].region}</CardDescription>
+                    <CardDescription>{country.region}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm mb-4">{t.countries[country.id as keyof typeof t.countries].description}</p>
+                    <p className="text-sm mb-4">{country.description}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <div className="flex items-center gap-1">
                           <Droplets className="h-3 w-3 text-blue-500" />
-                          <span>
-                            {t.waterLevel}: {country.startingStats.waterLevel}%
-                          </span>
+                          <span>Water: {country.startingStats.waterLevel}%</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Mountain className="h-3 w-3 text-gray-600" />
-                          <span>
-                            {t.waterControl}: {country.startingStats.waterControl}%
-                          </span>
+                          <span>Control: {country.startingStats.waterControl}%</span>
                         </div>
                       </div>
                       <div>
                         <div className="flex items-center gap-1">
                           <TrendingUp className="h-3 w-3 text-red-500" />
-                          <span>
-                            {t.geopoliticalPower}: {country.startingStats.geopoliticalPower}%
-                          </span>
+                          <span>Power: {country.startingStats.geopoliticalPower}%</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Zap className="h-3 w-3 text-yellow-500" />
-                          <span>
-                            {t.economicHealth}: {country.startingStats.economicHealth}%
-                          </span>
+                          <span>Economy: {country.startingStats.economicHealth}%</span>
                         </div>
                       </div>
                     </div>
@@ -482,14 +438,13 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-2xl">
                     <span className="text-3xl">{selectedCountry.flag}</span>
-                    {t.countries[selectedCountry.id as keyof typeof t.countries].name}
+                    {selectedCountry.name}
                     <Badge variant={selectedCountry.type === "source" ? "default" : "secondary"}>
-                      {selectedCountry.type === "source" ? t.source : t.downstream}
+                      {selectedCountry.type === "source" ? "Source Country" : "Downstream Country"}
                     </Badge>
                   </DialogTitle>
                   <DialogDescription className="text-lg">
-                    {t.countries[selectedCountry.id as keyof typeof t.countries].region} •{" "}
-                    {t.countries[selectedCountry.id as keyof typeof t.countries].description}
+                    {selectedCountry.region} • {selectedCountry.description}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -497,14 +452,14 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                   {/* Starting Statistics */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">{t.startingStatistics}</CardTitle>
+                      <CardTitle className="text-lg">Starting Statistics</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {Object.entries(selectedCountry.startingStats).map(([key, value]) => (
                         <div key={key} className="flex items-center justify-between">
                           <span className="flex items-center gap-2 text-sm">
                             {getStatIcon(key)}
-                            {getStatName(key)}
+                            {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
                           </span>
                           <span className={`font-semibold ${getStatColor(value)}`}>
                             {key === "resources" ? value : `${value}%`}
@@ -517,34 +472,30 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                   {/* Strategic Overview */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">{t.strategicOverview}</CardTitle>
+                      <CardTitle className="text-lg">Strategic Overview</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <h4 className="font-semibold text-green-600 mb-2">{t.advantages}</h4>
+                        <h4 className="font-semibold text-green-600 mb-2">Advantages</h4>
                         <ul className="text-sm space-y-1">
-                          {t.countries[selectedCountry.id as keyof typeof t.countries].advantages.map(
-                            (advantage, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-green-500 mt-1">•</span>
-                                {advantage}
-                              </li>
-                            ),
-                          )}
+                          {selectedCountry.advantages.map((advantage, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="text-green-500 mt-1">•</span>
+                              {advantage}
+                            </li>
+                          ))}
                         </ul>
                       </div>
                       <Separator />
                       <div>
-                        <h4 className="font-semibold text-red-600 mb-2">{t.challenges}</h4>
+                        <h4 className="font-semibold text-red-600 mb-2">Challenges</h4>
                         <ul className="text-sm space-y-1">
-                          {t.countries[selectedCountry.id as keyof typeof t.countries].challenges.map(
-                            (challenge, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-red-500 mt-1">•</span>
-                                {challenge}
-                              </li>
-                            ),
-                          )}
+                          {selectedCountry.challenges.map((challenge, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="text-red-500 mt-1">•</span>
+                              {challenge}
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     </CardContent>
@@ -555,12 +506,12 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                     <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2">
                         <Droplets className="h-5 w-5 text-blue-500" />
-                        {t.waterResources}
+                        Water Resources
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <h4 className="font-semibold mb-2">{t.waterSources}</h4>
+                        <h4 className="font-semibold mb-2">Water Sources</h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedCountry.waterSources.map((source, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
@@ -570,7 +521,7 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold mb-2">{t.dependencies}</h4>
+                        <h4 className="font-semibold mb-2">Dependencies</h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedCountry.dependencies.map((dependency, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
@@ -587,12 +538,12 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                     <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2">
                         <Globe className="h-5 w-5 text-purple-500" />
-                        {t.diplomaticCapabilities}
+                        Diplomatic Capabilities
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <h4 className="font-semibold mb-2">{t.specialActions}</h4>
+                        <h4 className="font-semibold mb-2">Special Actions</h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedCountry.specialActions.map((action, index) => (
                             <Badge key={index} variant="default" className="text-xs">
@@ -602,7 +553,7 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold mb-2">{t.diplomaticOptions}</h4>
+                        <h4 className="font-semibold mb-2">Diplomatic Options</h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedCountry.diplomaticOptions.map((option, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
@@ -612,7 +563,7 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold mb-2">{t.neighboringCountries}</h4>
+                        <h4 className="font-semibold mb-2">Neighboring Countries</h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedCountry.neighbors.map((neighbor, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
@@ -627,10 +578,10 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
 
                 <div className="flex justify-end gap-4 pt-4">
                   <Button variant="outline" onClick={() => setShowDetails(false)}>
-                    {t.backToSelection}
+                    Back to Selection
                   </Button>
                   <Button onClick={handleConfirmSelection} className="bg-blue-600 hover:bg-blue-700">
-                    {t.playAs} {t.countries[selectedCountry.id as keyof typeof t.countries].name}
+                    Play as {selectedCountry.name}
                   </Button>
                 </div>
               </>

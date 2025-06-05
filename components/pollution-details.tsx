@@ -21,7 +21,6 @@ import {
   ArrowRight,
 } from "lucide-react"
 import type { WaterQualityState } from "./pollution-indicator"
-import { getTranslation, type Language } from "@/lib/translations"
 
 interface PollutionDetailsProps {
   waterQuality: WaterQualityState
@@ -36,7 +35,6 @@ interface PollutionDetailsProps {
     type: "source" | "downstream"
   }>
   onTakeAction?: (actionType: string) => void
-  language: Language
 }
 
 export function PollutionDetails({
@@ -44,10 +42,8 @@ export function PollutionDetails({
   selectedCountry,
   neighboringCountries,
   onTakeAction,
-  language,
 }: PollutionDetailsProps) {
   const [activeTab, setActiveTab] = useState("sources")
-  const t = getTranslation(language)
 
   const getSourceIcon = (type: string) => {
     switch (type) {
@@ -91,34 +87,34 @@ export function PollutionDetails({
   const getDisputeDescription = (level: string) => {
     switch (level) {
       case "none":
-        return t.pollutionDetails.disputeLevel.none
+        return "No active water quality disputes with neighboring countries."
       case "minor":
-        return t.pollutionDetails.disputeLevel.minor
+        return "Minor concerns raised about water quality in diplomatic communications."
       case "moderate":
-        return t.pollutionDetails.disputeLevel.moderate
+        return "Formal complaints filed regarding cross-border pollution incidents."
       case "severe":
-        return t.pollutionDetails.disputeLevel.severe
+        return "Serious diplomatic tensions over persistent water contamination issues."
       case "critical":
-        return t.pollutionDetails.disputeLevel.critical
+        return "International crisis with potential for legal action and sanctions."
       default:
-        return t.pollutionDetails.disputeLevel.unknown
+        return "Unknown dispute status."
     }
   }
 
   const getHealthImpactDescription = (level: number) => {
-    if (level < 20) return t.pollutionDetails.healthImpact.minimal
-    if (level < 40) return t.pollutionDetails.healthImpact.some
-    if (level < 60) return t.pollutionDetails.healthImpact.significant
-    if (level < 80) return t.pollutionDetails.healthImpact.widespread
-    return t.pollutionDetails.healthImpact.publicEmergency
+    if (level < 20) return "Minimal health concerns from water quality."
+    if (level < 40) return "Some reports of waterborne illness in vulnerable populations."
+    if (level < 60) return "Significant health issues affecting multiple communities."
+    if (level < 80) return "Widespread health crisis with serious medical consequences."
+    return "Public health emergency with severe impacts across the population."
   }
 
   const getEnvironmentalImpactDescription = (level: number) => {
-    if (level < 20) return t.pollutionDetails.environmentalImpact.minimal
-    if (level < 40) return t.pollutionDetails.environmentalImpact.some
-    if (level < 60) return t.pollutionDetails.environmentalImpact.significant
-    if (level < 80) return t.pollutionDetails.environmentalImpact.severe
-    return t.pollutionDetails.environmentalImpact.ecologicalCollapse
+    if (level < 20) return "Minimal ecosystem disruption from water pollution."
+    if (level < 40) return "Some damage to sensitive aquatic species and habitats."
+    if (level < 60) return "Significant biodiversity loss and ecosystem degradation."
+    if (level < 80) return "Severe environmental damage with long-term recovery needed."
+    return "Ecological collapse in affected water systems with potentially irreversible damage."
   }
 
   return (
@@ -126,40 +122,42 @@ export function PollutionDetails({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Droplet className="h-5 w-5 text-blue-600" />
-          {t.pollutionDetails.cardTitle}
+          Water Quality & Pollution Management
         </CardTitle>
-        <CardDescription>{t.pollutionDetails.cardDescription}</CardDescription>
+        <CardDescription>
+          Monitor pollution sources, manage water treatment, and address cross-border water quality disputes
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="sources" className="flex items-center gap-1">
               <Factory className="h-4 w-4" />
-              <span>{t.pollutionDetails.tabs.sources}</span>
+              <span>Pollution Sources</span>
             </TabsTrigger>
             <TabsTrigger value="impacts" className="flex items-center gap-1">
               <AlertTriangle className="h-4 w-4" />
-              <span>{t.pollutionDetails.tabs.impacts}</span>
+              <span>Impacts</span>
             </TabsTrigger>
             <TabsTrigger value="disputes" className="flex items-center gap-1">
               <Scale className="h-4 w-4" />
-              <span>{t.pollutionDetails.tabs.disputes}</span>
+              <span>Disputes</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="sources" className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">{t.pollutionDetails.contaminationSources}</h3>
+              <h3 className="text-sm font-medium">Contamination Sources</h3>
               <Badge variant="outline" className="flex items-center gap-1">
                 <Microscope className="h-3 w-3" />
-                {t.pollutionDetails.monitoring}: {waterQuality.monitoringEfficiency}%
+                Monitoring: {waterQuality.monitoringEfficiency}%
               </Badge>
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">{t.pollutionDetails.domesticSources}</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">Domestic Sources</h4>
               {localSources.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">{t.pollutionDetails.noLocalSources}</p>
+                <p className="text-sm text-muted-foreground italic">No significant local pollution sources detected.</p>
               ) : (
                 <ScrollArea className="h-32 border rounded-md p-2">
                   {localSources.map((source) => (
@@ -173,9 +171,7 @@ export function PollutionDetails({
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">{source.description}</p>
-                        <div className="text-xs mt-1">
-                          {t.pollutionDetails.location}: {source.location}
-                        </div>
+                        <div className="text-xs mt-1">Location: {source.location}</div>
                       </div>
                     </div>
                   ))}
@@ -184,9 +180,9 @@ export function PollutionDetails({
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">{t.pollutionDetails.crossBorderSources}</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">Cross-Border Sources</h4>
               {foreignSources.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">{t.pollutionDetails.noCrossBorderSources}</p>
+                <p className="text-sm text-muted-foreground italic">No cross-border pollution sources detected.</p>
               ) : (
                 <ScrollArea className="h-32 border rounded-md p-2">
                   {foreignSources.map((source) => (
@@ -201,9 +197,7 @@ export function PollutionDetails({
                         </div>
                         <p className="text-xs text-muted-foreground">{source.description}</p>
                         <div className="flex items-center gap-1 text-xs mt-1">
-                          <span>
-                            {t.pollutionDetails.origin}: {getCountryById(source.origin).name}
-                          </span>
+                          <span>Origin: {getCountryById(source.origin).name}</span>
                           <ArrowRight className="h-3 w-3" />
                           <span>{selectedCountry.name}</span>
                         </div>
@@ -216,8 +210,8 @@ export function PollutionDetails({
 
             <div className="flex items-center justify-between pt-2">
               <div>
-                <h4 className="text-sm font-medium">{t.pollutionDetails.waterTreatmentCapacity}</h4>
-                <p className="text-xs text-muted-foreground">{t.pollutionDetails.waterTreatmentDescription}</p>
+                <h4 className="text-sm font-medium">Water Treatment Capacity</h4>
+                <p className="text-xs text-muted-foreground">Current capacity to process and clean water</p>
               </div>
               <div className="text-right">
                 <span className="font-medium">{waterQuality.waterTreatmentCapacity}%</span>
@@ -228,11 +222,11 @@ export function PollutionDetails({
             <div className="flex gap-2 pt-2">
               <Button size="sm" onClick={() => onTakeAction?.("monitor_pollution")}>
                 <Microscope className="h-4 w-4 mr-1" />
-                {t.pollutionDetails.monitorSources}
+                Monitor Sources
               </Button>
               <Button size="sm" onClick={() => onTakeAction?.("improve_treatment")}>
                 <Flask className="h-4 w-4 mr-1" />
-                {t.pollutionDetails.improveTreatment}
+                Improve Treatment
               </Button>
             </div>
           </TabsContent>
@@ -241,12 +235,12 @@ export function PollutionDetails({
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">{t.pollutionDetails.publicHealthImpacts}</h3>
+                  <h3 className="text-sm font-medium">Public Health Impacts</h3>
                   <Badge
                     variant={waterQuality.healthImpacts > 50 ? "destructive" : "outline"}
                     className="flex items-center gap-1"
                   >
-                    {t.pollutionDetails.impact}: {waterQuality.healthImpacts}%
+                    Impact: {waterQuality.healthImpacts}%
                   </Badge>
                 </div>
                 <Progress
@@ -266,12 +260,12 @@ export function PollutionDetails({
 
               <div>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">{t.pollutionDetails.environmentalDamage}</h3>
+                  <h3 className="text-sm font-medium">Environmental Damage</h3>
                   <Badge
                     variant={waterQuality.environmentalDamage > 50 ? "destructive" : "outline"}
                     className="flex items-center gap-1"
                   >
-                    {t.pollutionDetails.damage}: {waterQuality.environmentalDamage}%
+                    Damage: {waterQuality.environmentalDamage}%
                   </Badge>
                 </div>
                 <Progress
@@ -290,26 +284,26 @@ export function PollutionDetails({
               <Separator />
 
               <div>
-                <h3 className="text-sm font-medium">{t.pollutionDetails.economicConsequences}</h3>
+                <h3 className="text-sm font-medium">Economic Consequences</h3>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <div className="border rounded-md p-3">
-                    <div className="text-sm font-medium">{t.pollutionDetails.tourismImpact}</div>
+                    <div className="text-sm font-medium">Tourism Impact</div>
                     <div className="text-xs text-muted-foreground">
                       {waterQuality.pollutionLevel > 60
-                        ? t.pollutionDetails.tourismImpactSevere
+                        ? "Severe reduction in tourism revenue"
                         : waterQuality.pollutionLevel > 40
-                          ? t.pollutionDetails.tourismImpactModerate
-                          : t.pollutionDetails.tourismImpactMinimal}
+                          ? "Moderate impact on tourism sector"
+                          : "Minimal effect on tourism"}
                     </div>
                   </div>
                   <div className="border rounded-md p-3">
-                    <div className="text-sm font-medium">{t.pollutionDetails.fisheriesImpact}</div>
+                    <div className="text-sm font-medium">Fisheries Impact</div>
                     <div className="text-xs text-muted-foreground">
                       {waterQuality.pollutionLevel > 50
-                        ? t.pollutionDetails.fisheriesImpactSignificant
+                        ? "Significant decline in fish stocks"
                         : waterQuality.pollutionLevel > 30
-                          ? t.pollutionDetails.fisheriesImpactSome
-                          : t.pollutionDetails.fisheriesImpactHealthy}
+                          ? "Some reduction in fishery productivity"
+                          : "Healthy aquatic ecosystem"}
                     </div>
                   </div>
                 </div>
@@ -317,10 +311,10 @@ export function PollutionDetails({
 
               <div className="flex gap-2 pt-2">
                 <Button size="sm" onClick={() => onTakeAction?.("health_measures")}>
-                  {t.pollutionDetails.addressHealthIssues}
+                  Address Health Issues
                 </Button>
                 <Button size="sm" onClick={() => onTakeAction?.("ecosystem_restoration")}>
-                  {t.pollutionDetails.restoreEcosystems}
+                  Restore Ecosystems
                 </Button>
               </div>
             </div>
@@ -328,7 +322,7 @@ export function PollutionDetails({
 
           <TabsContent value="disputes" className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">{t.pollutionDetails.internationalWaterQualityDisputes}</h3>
+              <h3 className="text-sm font-medium">International Water Quality Disputes</h3>
               <Badge
                 variant={
                   waterQuality.disputeLevel === "severe" || waterQuality.disputeLevel === "critical"
@@ -336,7 +330,7 @@ export function PollutionDetails({
                     : "outline"
                 }
               >
-                {t.pollutionDetails.status}: {waterQuality.disputeLevel}
+                Status: {waterQuality.disputeLevel}
               </Badge>
             </div>
 
@@ -345,21 +339,21 @@ export function PollutionDetails({
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">{t.pollutionDetails.internationalStandardsCompliance}</h4>
+              <h4 className="text-sm font-medium">International Standards Compliance</h4>
               <div className="flex items-center gap-2">
                 <Badge variant={waterQuality.internationalStandards ? "default" : "destructive"}>
-                  {waterQuality.internationalStandards ? t.pollutionDetails.compliant : t.pollutionDetails.nonCompliant}
+                  {waterQuality.internationalStandards ? "Compliant" : "Non-compliant"}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
                   {waterQuality.internationalStandards
-                    ? t.pollutionDetails.meetsInternationalStandards
-                    : t.pollutionDetails.failsInternationalStandards}
+                    ? "Your water quality meets international standards"
+                    : "Your water quality fails to meet international standards"}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">{t.pollutionDetails.affectedRelations}</h4>
+              <h4 className="text-sm font-medium">Affected Relations</h4>
               {foreignSources.length > 0 ? (
                 <div className="space-y-2">
                   {Array.from(new Set(foreignSources.map((s) => s.origin))).map((countryId) => {
@@ -374,26 +368,25 @@ export function PollutionDetails({
                           </Badge>
                         </div>
                         <div className="text-sm">
-                          {sources.length} {t.pollutionDetails.pollutionSource}
-                          {sources.length !== 1 ? "s" : ""}
+                          {sources.length} pollution source{sources.length !== 1 ? "s" : ""}
                         </div>
                       </div>
                     )
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">{t.pollutionDetails.noCrossBorderDisputes}</p>
+                <p className="text-sm text-muted-foreground italic">No cross-border pollution disputes detected.</p>
               )}
             </div>
 
             <div className="flex gap-2 pt-2">
               <Button size="sm" onClick={() => onTakeAction?.("diplomatic_protest")}>
                 <Scale className="h-4 w-4 mr-1" />
-                {t.pollutionDetails.fileDiplomaticProtest}
+                File Diplomatic Protest
               </Button>
               <Button size="sm" onClick={() => onTakeAction?.("water_quality_agreement")}>
                 <FileText className="h-4 w-4 mr-1" />
-                {t.pollutionDetails.proposeQualityAgreement}
+                Propose Quality Agreement
               </Button>
             </div>
           </TabsContent>
