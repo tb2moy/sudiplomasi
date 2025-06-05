@@ -120,8 +120,7 @@ export function PollutionIndicator({ waterQuality, isDownstream, language }: Pol
         <div className="flex items-center gap-2 mt-2">
           <AlertTriangle className="h-4 w-4 text-orange-500" />
           <span className="text-sm text-orange-700">
-            {t.receivingCrossBorderPollution}
-            {crossBorderSources.length} {t.upstreamSource}
+            Receiving cross-border pollution from {crossBorderSources.length} upstream source
             {crossBorderSources.length > 1 ? "s" : ""}
           </span>
         </div>

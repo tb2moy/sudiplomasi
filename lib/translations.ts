@@ -274,6 +274,104 @@ export interface Translations {
     mediation: string
     protest: string
   }
+
+  pollutionDetails?: {
+    cardTitle: string
+    cardDescription: string
+    tabs: {
+      sources: string
+      impacts: string
+      disputes: string
+    }
+    contaminationSources: string
+    monitoring: string
+    domesticSources: string
+    crossBorderSources: string
+    noLocalSources: string
+    noCrossBorderSources: string
+    location: string
+    origin: string
+    waterTreatmentCapacity: string
+    waterTreatmentDescription: string
+    monitorSources: string
+    improveTreatment: string
+    publicHealthImpacts: string
+    environmentalDamage: string
+    impact: string
+    damage: string
+    economicConsequences: string
+    tourismImpact: string
+    fisheriesImpact: string
+    tourismImpactSevere: string
+    tourismImpactModerate: string
+    tourismImpactMinimal: string
+    fisheriesImpactSignificant: string
+    fisheriesImpactSome: string
+    fisheriesImpactHealthy: string
+    addressHealthIssues: string
+    restoreEcosystems: string
+    internationalWaterQualityDisputes: string
+    status: string
+    internationalStandardsCompliance: string
+    compliant: string
+    nonCompliant: string
+    meetsInternationalStandards: string
+    failsInternationalStandards: string
+    affectedRelations: string
+    pollutionSource: string
+    noCrossBorderDisputes: string
+    fileDiplomaticProtest: string
+    proposeQualityAgreement: string
+    disputeLevel: {
+      none: string
+      minor: string
+      moderate: string
+      severe: string
+      critical: string
+      unknown: string
+    }
+    healthImpact: {
+      minimal: string
+      some: string
+      significant: string
+      widespread: string
+      publicEmergency: string
+    }
+    environmentalImpact: {
+      minimal: string
+      some: string
+      significant: string
+      severe: string
+      ecologicalCollapse: string
+    }
+  }
+
+  quickTips?: {
+    title: string
+    tip1: string
+    tip2: string
+    tip3: string
+    tip4: string
+    footer: string
+  }
+
+  help?: {
+    title: string
+    description: string
+    searchPlaceholder: string
+    basics: string
+    roles: string
+    mechanics: string
+    challenges: string
+    climate: string
+    interface: string
+    noTopics: string
+    topicsAvailable: string
+    close: string
+  }
+
+  receivingCrossBorderPollution?: string
+  upstreamSource?: string
 }
 
 export const translations: Record<Language, Translations> = {
@@ -784,189 +882,108 @@ export const translations: Record<Language, Translations> = {
     urgency: "Aciliyet",
     apply: "Uygula",
 
-    // Quick Help
-    quickTips: "Hızlı İpuçları",
-    monitorWaterLevels: "Su seviyelerinizi yakından izleyin - diğer tüm metrikleri etkiler",
-    switchRolesStrategically: "Farklı eylemlere erişmek için stratejik olarak rol değiştirin",
-    prepareForClimateEvents: "Dirençlilik yatırımı yaparak iklim olaylarına hazırlanın",
-    useAiAdvisor: "Bir sonraki hamlenizden emin olmadığınızda AI Danışmanı kullanın",
-    clickHelpButton: "Detaylı oyun bilgisi için yardım butonuna tıklayın",
-
-    // Countries
-    countries: {
-      alpinia: {
-        name: "Alpinia",
-        region: "Dağlık Yaylalar",
-        description:
-          "Üç büyük nehir sisteminin su kaynaklarını kontrol eden dağlık bir ülke. Tatlı su kaynaklarında zengin ancak iklim kaynaklı buzul erimesiyle karşı karşıya.",
-        advantages: [
-          "Büyük nehir kaynaklarını kontrol eder",
-          "Bol tatlı su rezervleri",
-          "Hidroelektrik potansiyeli",
-          "Güçlü müzakere pozisyonu",
-          "Bozulmamış doğadan turizm geliri",
-        ],
-        challenges: [
-          "İklim değişikliğinin buzulları etkilemesi",
-          "Su paylaşımı için uluslararası baskı",
-          "Sınırlı tarım arazisi",
-          "Mevsimsel su akış değişimleri",
-          "Çevre koruma maliyetleri",
-        ],
+    // Pollution Details için eksik çeviriler
+    pollutionDetails: {
+      cardTitle: "Su Kalitesi ve Kirlilik Yönetimi",
+      cardDescription:
+        "Kirlilik kaynaklarını izleyin, su arıtmayı yönetin ve sınır ötesi su kalitesi anlaşmazlıklarını ele alın",
+      tabs: {
+        sources: "Kirlilik Kaynakları",
+        impacts: "Etkiler",
+        disputes: "Anlaşmazlıklar",
       },
-      highland_federation: {
-        name: "Yayla Federasyonu",
-        region: "Kuzey Platosu",
-        description:
-          "Geniş yayla havzalarını kontrol eden federal bir devlet. Su ihracat gelirlerini yerel ihtiyaçlar ve çevre koruma ile dengeler.",
-        advantages: [
-          "Çoklu nehir sistemi kontrolü",
-          "Su ihracat gelirleri",
-          "Güçlü federal kurumlar",
-          "Gelişmiş su yönetimi",
-          "Bölgesel etki",
-        ],
-        challenges: [
-          "Federal ve eyalet su hakları",
-          "Aşağı akım diplomatik baskısı",
-          "Altyapı bakım maliyetleri",
-          "Çevresel bozulma",
-          "İklim adaptasyon ihtiyaçları",
-        ],
+      contaminationSources: "Kontaminasyon Kaynakları",
+      monitoring: "İzleme",
+      domesticSources: "Yerel Kaynaklar",
+      crossBorderSources: "Sınır Ötesi Kaynaklar",
+      noLocalSources: "Önemli yerel kirlilik kaynağı tespit edilmedi.",
+      noCrossBorderSources: "Sınır ötesi kirlilik kaynağı tespit edilmedi.",
+      location: "Konum",
+      origin: "Kaynak",
+      waterTreatmentCapacity: "Su Arıtma Kapasitesi",
+      waterTreatmentDescription: "Suyu işleme ve temizleme mevcut kapasitesi",
+      monitorSources: "Kaynakları İzle",
+      improveTreatment: "Arıtmayı İyileştir",
+      publicHealthImpacts: "Halk Sağlığı Etkileri",
+      environmentalDamage: "Çevresel Hasar",
+      impact: "Etki",
+      damage: "Hasar",
+      economicConsequences: "Ekonomik Sonuçlar",
+      tourismImpact: "Turizm Etkisi",
+      fisheriesImpact: "Balıkçılık Etkisi",
+      tourismImpactSevere: "Turizm gelirlerinde ciddi azalma",
+      tourismImpactModerate: "Turizm sektöründe orta düzeyde etki",
+      tourismImpactMinimal: "Turizm üzerinde minimal etki",
+      fisheriesImpactSignificant: "Balık stoklarında önemli azalma",
+      fisheriesImpactSome: "Balıkçılık verimliliğinde bir miktar azalma",
+      fisheriesImpactHealthy: "Sağlıklı sucul ekosistem",
+      addressHealthIssues: "Sağlık Sorunlarını Ele Al",
+      restoreEcosystems: "Ekosistemleri Restore Et",
+      internationalWaterQualityDisputes: "Uluslararası Su Kalitesi Anlaşmazlıkları",
+      status: "Durum",
+      internationalStandardsCompliance: "Uluslararası Standartlara Uyum",
+      compliant: "Uyumlu",
+      nonCompliant: "Uyumsuz",
+      meetsInternationalStandards: "Su kaliteniz uluslararası standartları karşılıyor",
+      failsInternationalStandards: "Su kaliteniz uluslararası standartları karşılamıyor",
+      affectedRelations: "Etkilenen İlişkiler",
+      pollutionSource: "kirlilik kaynağı",
+      noCrossBorderDisputes: "Sınır ötesi kirlilik anlaşmazlığı tespit edilmedi.",
+      fileDiplomaticProtest: "Diplomatik Protesto Başvurusu",
+      proposeQualityAgreement: "Kalite Anlaşması Öner",
+      disputeLevel: {
+        none: "Komşu ülkelerle aktif su kalitesi anlaşmazlığı yok.",
+        minor: "Diplomatik iletişimde su kalitesi konusunda küçük endişeler dile getirildi.",
+        moderate: "Sınır ötesi kirlilik olayları hakkında resmi şikayetler yapıldı.",
+        severe: "Kalıcı su kontaminasyonu sorunları nedeniyle ciddi diplomatik gerilimler.",
+        critical: "Hukuki işlem ve yaptırım potansiyeli olan uluslararası kriz.",
+        unknown: "Bilinmeyen anlaşmazlık durumu.",
       },
-      riverlandia: {
-        name: "Nehirland",
-        region: "Merkezi Nehir Vadisi",
-        description:
-          "Yukarı akım su akışlarına bağımlı tarımsal bir güç. Yukarı akım gelişimi ve iklim değişikliği nedeniyle artan su stresiyle karşı karşıya.",
-        advantages: [
-          "Verimli tarım arazileri",
-          "Kurulu sulama sistemleri",
-          "Gıda ihracat yetenekleri",
-          "Stratejik nehir konumu",
-          "Güçlü tarım ekonomisi",
-        ],
-        challenges: [
-          "Yukarı akım su bağımlılığı",
-          "Mevsimsel akış değişimleri",
-          "Tarımsal su talepleri",
-          "Sel ve kuraklık döngüleri",
-          "Sınırlı su depolama",
-        ],
+      healthImpact: {
+        minimal: "Su kalitesinden kaynaklanan minimal sağlık endişesi.",
+        some: "Savunmasız popülasyonlarda su kaynaklı hastalık raporları.",
+        significant: "Birden fazla topluluğu etkileyen önemli sağlık sorunları.",
+        widespread: "Ciddi tıbbi sonuçları olan yaygın sağlık krizi.",
+        publicEmergency: "Nüfus genelinde ciddi etkiler yaratan halk sağlığı acil durumu.",
       },
-      deltopia: {
-        name: "Deltopia",
-        region: "Nehir Deltası",
-        description:
-          "Nehir ağzında yoğun nüfuslu bir delta ülkesi. Hem su kıtlığına hem de sele karşı son derece savunmasız, önemli ekonomik ve çevresel zorluklarla.",
-        advantages: [
-          "Stratejik kıyı konumu",
-          "Büyük liman tesisleri",
-          "Balıkçılık endüstrisi",
-          "Delta tarımı",
-          "Uluslararası ticaret merkezi",
-        ],
-        challenges: [
-          "Aşırı su savunmasızlığı",
-          "Deniz seviyesi yükselme tehditleri",
-          "Tuzlu su sızması",
-          "Yoğun nüfus baskısı",
-          "Sınırlı tatlı su kaynakları",
-        ],
-      },
-      desert_emirates: {
-        name: "Çöl Emirlikleri",
-        region: "Kurak Ovalar",
-        description:
-          "Su kaynaklarını güvence altına almak için teknoloji ve diplomasiye dayanan zengin ama su kıt bir ülke. Su altyapısını finanse etmek için petrol zenginliğini kullanır.",
-        advantages: [
-          "Su projeleri için petrol zenginliği",
-          "Gelişmiş tuzdan arındırma teknolojisi",
-          "Güçlü uluslararası ilişkiler",
-          "Verimli su kullanım sistemleri",
-          "İnovasyona yatırım",
-        ],
-        challenges: [
-          "Aşırı su kıtlığı",
-          "Yüksek altyapı maliyetleri",
-          "Enerji yoğun su üretimi",
-          "Sınırlı doğal su kaynakları",
-          "İklim savunmasızlığı",
-        ],
+      environmentalImpact: {
+        minimal: "Su kirliliğinden kaynaklanan minimal ekosistem bozulması.",
+        some: "Hassas sucul türler ve habitatlarda bazı hasarlar.",
+        significant: "Önemli biyoçeşitlilik kaybı ve ekosistem bozulması.",
+        severe: "Uzun vadeli iyileşme gerektiren ciddi çevresel hasar.",
+        ecologicalCollapse: "Potansiyel olarak geri dönüşü olmayan hasarla etkilenen su sistemlerinde ekolojik çöküş.",
       },
     },
 
-    // Events and Messages
-    events: {
-      heavyRainfall: "Şiddetli yağmur su rezervlerini %10 artırıyor",
-      industrialAccident: "Endüstriyel kaza su kaynağını kirletiyor",
-      publicProtests: "Halk protestoları daha iyi su yönetimi talep ediyor",
-      internationalAid: "Uluslararası yardım paketi onaylandı",
-      newTechnology: "Yeni su verimli teknoloji keşfedildi",
-      climateResearch: "İklim araştırması atılımı adaptasyonu geliştiriyor",
-      industrialDischarge: "Bir fabrika nehir sistemine arıtılmamış atık su yasadışı olarak deşarj etti.",
-      agriculturalRunoff: "Şiddetli yağmurlar tarım arazilerinden gübre ve pestisitleri su kaynaklarına taşıdı.",
-      crossBorderComplaint:
-        "Komşu bir ülke topraklarınızdan kaynaklanan su kirliliği hakkında resmi şikayette bulundu.",
-      urbanSewageOverflow: "Şiddetli yağmur kentsel kanalizasyon sistemlerinin su kaynaklarına taşmasına neden oldu.",
+    // Quick Help için eksik çeviriler
+    quickTips: {
+      title: "Hızlı İpuçları",
+      tip1: "Su seviyelerinizi yakından izleyin - diğer tüm metrikleri etkiler",
+      tip2: "Farklı eylemlere erişmek için stratejik olarak rol değiştirin",
+      tip3: "Dirençlilik yatırımı yaparak iklim olaylarına hazırlanın",
+      tip4: "Bir sonraki hamlenizden emin olmadığınızda AI Danışmanı kullanın",
+      footer: "Detaylı oyun bilgisi için yardım butonuna tıklayın",
     },
 
-    // Pollution Events
-    pollutionEvents: {
-      industrialDischargeIncident: "Endüstriyel Deşarj Olayı",
-      agriculturalRunoffSurge: "Tarımsal Akış Artışı",
-      crossBorderPollutionComplaint: "Sınır Ötesi Kirlilik Şikayeti",
-      urbanSewageOverflow: "Kentsel Kanalizasyon Taşması",
+    // Help system için eksik çeviriler
+    help: {
+      title: "Su Diplomasisi Oyunu Yardım",
+      description: "Oyun mekanikleri, roller, zorluklar ve stratejiler hakkında bilgi edinin",
+      searchPlaceholder: "Yardım konularını ara...",
+      basics: "Temel Bilgiler",
+      roles: "Roller",
+      mechanics: "Mekanikler",
+      challenges: "Zorluklar",
+      climate: "İklim",
+      interface: "Arayüz",
+      noTopics: "Bu kategoride eşleşen konu yok",
+      topicsAvailable: "yardım konusu mevcut",
+      close: "Kapat",
     },
 
-    // Tags
-    tags: {
-      regulation: "düzenleme",
-      emergency: "acil durum",
-      publicPolicy: "kamu politikası",
-      infrastructure: "altyapı",
-      longTerm: "uzun vadeli",
-      investment: "yatırım",
-      control: "kontrol",
-      diplomatic: "diplomatik",
-      sourceOnly: "sadece kaynak",
-      coalition: "koalisyon",
-      downstreamOnly: "sadece aşağı akım",
-      legal: "hukuki",
-      international: "uluslararası",
-      efficiency: "verimlilik",
-      technology: "teknoloji",
-      sustainable: "sürdürülebilir",
-      energy: "enerji",
-      adaptation: "adaptasyon",
-      trade: "ticaret",
-      dependency: "bağımlılık",
-      conservation: "koruma",
-      awareness: "farkındalık",
-      public: "kamu",
-      climate: "iklim",
-      protection: "koruma",
-      restoration: "restorasyon",
-      ecosystem: "ekosistem",
-      biodiversity: "biyoçeşitlilik",
-      cooperation: "işbirliği",
-      regional: "bölgesel",
-      economic: "ekonomik",
-      pricing: "fiyatlandırma",
-      compensation: "tazminat",
-      wealthyOnly: "sadece zengin",
-      pollution: "kirlilik",
-      enforcement: "uygulama",
-      standards: "standartlar",
-      quality: "kalite",
-      treatment: "arıtma",
-      health: "sağlık",
-      industry: "endüstri",
-      monitoring: "izleme",
-      treaty: "anlaşma",
-      mediation: "arabuluculuk",
-      protest: "protesto",
-    },
+    // Eksik pollution indicator çevirileri
+    receivingCrossBorderPollution: "Yukarı akımdan sınır ötesi kirlilik alıyorsunuz:",
+    upstreamSource: "yukarı akım kaynağı",
   },
 }
 

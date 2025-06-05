@@ -31,7 +31,7 @@ import {
   Bot,
 } from "lucide-react"
 
-import { getTranslation, type Language } from "@/lib/i18n"
+import { getTranslation, type Language } from "@/lib/translations"
 
 interface HelpTopic {
   id: string

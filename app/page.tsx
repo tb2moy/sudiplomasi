@@ -1133,7 +1133,9 @@ const WaterDiplomacyGame: React.FC = () => {
     : []
 
   if (!gameInitialized) {
-    return <CountrySelection onCountrySelect={handleCountrySelection} language={language} />
+    return (
+      <CountrySelection onCountrySelect={handleCountrySelection} language={language} onLanguageChange={setLanguage} />
+    )
   }
 
   return (

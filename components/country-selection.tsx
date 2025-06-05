@@ -329,7 +329,13 @@ export function CountrySelection({ onCountrySelect, language }: CountrySelection
                 <CardTitle className="text-3xl font-bold text-blue-800">{t.chooseNation}</CardTitle>
               </div>
               <div className="flex-1 flex justify-end">
-                <LanguageSelector currentLanguage={language} onLanguageChange={() => {}} />
+                <LanguageSelector
+                  currentLanguage={language}
+                  onLanguageChange={(newLang) => {
+                    // Parent component'e dil değişikliğini bildir
+                    window.location.reload() // Geçici çözüm - daha iyi bir state management ile değiştirilebilir
+                  }}
+                />
               </div>
             </div>
             <CardDescription className="text-lg">{t.chooseNationDescription}</CardDescription>
